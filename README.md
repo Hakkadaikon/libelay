@@ -101,6 +101,7 @@ docker compose up
 - [clang-format](https://github.com/llvm/llvm-project/tree/main/clang/tools/clang-format)
 - [cmake](https://github.com/Kitware/CMake)
 - [googletest](https://github.com/google/googletest)
+- [just](https://github.com/casey/just)
 
 ## Author
 
