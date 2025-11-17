@@ -6,8 +6,24 @@
 extern void var_dump_local(const int32_t fd, const char* str, const int32_t value);
 extern void log_dump_local(const int32_t fd, const char* str);
 
-#define SYSCALL_EARLY_RETURN(ret) { if (ret < 0){log_dump_local(1, __func__); var_dump_local(1, ":", ret); errno = ret; return -1;} }
-#define SYSCALL_SIZE_EARLY_RETURN(ret) { if (ret < 0){log_dump_local(1, __func__); var_dump_local(1, ":", ret); errno = -ret; return -1;} }
+#define SYSCALL_EARLY_RETURN(ret)        \
+    {                                    \
+        if (ret < 0) {                   \
+            log_dump_local(1, __func__); \
+            var_dump_local(1, ":", ret); \
+            errno = ret;                 \
+            return -1;                   \
+        }                                \
+    }
+#define SYSCALL_SIZE_EARLY_RETURN(ret)   \
+    {                                    \
+        if (ret < 0) {                   \
+            log_dump_local(1, __func__); \
+            var_dump_local(1, ":", ret); \
+            errno = -ret;                \
+            return -1;                   \
+        }                                \
+    }
 
 extern int32_t linux_x8664_asm_syscall(
     int64_t syscall_num,

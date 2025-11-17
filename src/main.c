@@ -25,15 +25,15 @@ void websocket_receive_callback(
 void websocket_connect_callback(int client_sock)
 {
     log_info("hello connect");
-    //printf("[user] connect. socket fd : %d\n", client_sock);
-    //fflush(stdout);
+    // printf("[user] connect. socket fd : %d\n", client_sock);
+    // fflush(stdout);
 }
 
 void websocket_disconnect_callback(int client_sock)
 {
     log_info("bye connect");
-    //printf("[user] disconnect. socket fd : %d\n", client_sock);
-    //fflush(stdout);
+    // printf("[user] disconnect. socket fd : %d\n", client_sock);
+    // fflush(stdout);
 }
 
 int main()
