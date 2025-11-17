@@ -1,0 +1,79 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+./lib
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# Perf
+perf.data
+perf.data.old
+
+# Examples
+examples/echoback/bin/*
+examples/echoback/obj/*
+
+# Log
+*.txt
+
+# Other
+tests/build
+build
+test
+ws-server
+result
+tmp/
+.cache/
+native/src
+native/lib
+native/obj
+
+!CMakeLists.txt
+!.gitignore
