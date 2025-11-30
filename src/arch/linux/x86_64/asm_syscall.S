@@ -15,8 +15,7 @@ linux_x8664_asm_syscall:
     movq    %rcx, %rdx
     movq    %r8,  %r10
     movq    %r9,  %r8
-    movq    8(%rsp), %r9
-    //movq    16(%rsp), %r9
+    movq    16(%rsp), %r9
 
     // Perform the syscall.
     syscall
