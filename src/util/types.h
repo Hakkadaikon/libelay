@@ -38,7 +38,7 @@ typedef long long int64_t;
 
 #ifndef _UINT64_T
 #define _UINT64_T
-typedef unsigned int uint64_t;
+typedef unsigned long long uint64_t;
 #endif
 
 #ifndef _SIZE_T
@@ -49,6 +49,21 @@ typedef uint64_t size_t;
 #ifndef _SSIZE_T
 #define _SSIZE_T
 typedef int64_t ssize_t;
+#endif
+
+#ifndef _PID_T
+#define _PID_T
+typedef int32_t pid_t;
+#endif
+
+#ifndef _UID_T
+#define _UID_T
+typedef int32_t uid_t;
+#endif
+
+#ifndef _CLOCK_T
+#define _CLOCK_T
+typedef uint64_t clock_t;
 #endif
 
 #ifndef bool

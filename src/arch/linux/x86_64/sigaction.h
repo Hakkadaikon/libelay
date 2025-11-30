@@ -14,15 +14,15 @@ static inline int32_t linux_x8664_sigaction(const int32_t signum, struct sigacti
     act->sa_flags |= SA_RESTORER;
     act->sa_restorer = &linux_x8664_restore_rt;
 
-    //FIXME: error
     int32_t ret = linux_x8664_asm_syscall4(
         __NR_rt_sigaction,
         signum,
         act,
         oldact,
-        sizeof(act->sa_mask));
+        sizeof(sigset_t));
 
-    var_dump_local(1, "sigaction ret:", ret);
+    // var_dump_local(1, "sigaction ret:", ret);
+    // var_dump_local(1, "signum:", signum);
     SYSCALL_EARLY_RETURN(ret);
     return ret;
 }
