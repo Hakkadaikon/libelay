@@ -36,6 +36,6 @@ typedef struct
 {
     uint32_t           events;
     WebSocketEpollData data;
-} WebSocketEpollEvent, *PWebSocketEpollEvent;
+} __attribute__((packed)) WebSocketEpollEvent, *PWebSocketEpollEvent;
 
 #endif

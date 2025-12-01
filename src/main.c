@@ -1,6 +1,6 @@
 #include "./websocket/websocket.h"
 
-void websocket_receive_callback(
+void websocket_callback_echoback(
     const int       client_sock,
     PWebSocketFrame frame,
     const size_t    buffer_capacity,
@@ -22,18 +22,23 @@ void websocket_receive_callback(
     }
 }
 
+void websocket_receive_callback(
+    const int       client_sock,
+    PWebSocketFrame frame,
+    const size_t    buffer_capacity,
+    char*           response_buffer)
+{
+    websocket_callback_echoback(client_sock, frame, buffer_capacity, response_buffer);
+}
+
 void websocket_connect_callback(int client_sock)
 {
-    log_info("hello connect");
-    // printf("[user] connect. socket fd : %d\n", client_sock);
-    // fflush(stdout);
+    log_info("[user] hello connect");
 }
 
 void websocket_disconnect_callback(int client_sock)
 {
-    log_info("bye connect");
-    // printf("[user] disconnect. socket fd : %d\n", client_sock);
-    // fflush(stdout);
+    log_info("[user] bye");
 }
 
 int main()
