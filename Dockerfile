@@ -1,19 +1,18 @@
 FROM debian:bookworm-slim AS build-dev
-WORKDIR /opt/websocket
-COPY . /opt/websocket
+WORKDIR /opt/relay
+COPY . /opt/relay
 RUN \
   apt update && \
   apt install -y \
   cmake \
-  make
+  make \
+  just
 RUN \
-  cmake -S /opt/websocket -B /opt/websocket/build -DCMAKE_BUILD_TYPE=Release && \
-  cmake --build /opt/websocket/build && \
-  make BUILD=release -C /opt/websocket/examples/echoback
+  just release-build
 
 FROM scratch AS runtime
 WORKDIR /opt/websocket
 
-COPY --from=build-dev /opt/websocket/examples/echoback/bin/wsserver /opt/websocket/examples/echoback/bin/
+COPY --from=build-dev /opt/relay/build/relay /opt/relay/bin/
 
-ENTRYPOINT ["/opt/websocket/examples/echoback/bin/wsserver"]
+ENTRYPOINT ["/opt/relay/bin/relay"]
