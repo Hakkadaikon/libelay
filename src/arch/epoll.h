@@ -11,12 +11,12 @@ static inline int32_t internal_epoll_ctl(
     const int32_t        fd,
     PWebSocketEpollEvent event)
 {
-    return linux_x8664_epoll_ctl(epoll_fd, op, fd, event);
+  return linux_x8664_epoll_ctl(epoll_fd, op, fd, event);
 }
 
 static inline int32_t internal_epoll_create1(const int32_t flags)
 {
-    return linux_x8664_epoll_create1(flags);
+  return linux_x8664_epoll_create1(flags);
 }
 
 static inline int32_t internal_epoll_wait(
@@ -25,7 +25,7 @@ static inline int32_t internal_epoll_wait(
     const int32_t        maxevents,
     const int32_t        timeout)
 {
-    return linux_x8664_epoll_wait(epfd, events, maxevents, timeout);
+  return linux_x8664_epoll_wait(epfd, events, maxevents, timeout);
 }
 
 #endif

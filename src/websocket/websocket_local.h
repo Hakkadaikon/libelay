@@ -15,20 +15,20 @@
 #include "websocket.h"
 
 typedef struct {
-    int32_t              epoll_fd;
-    uint8_t              dummy[4];
-    PWebSocketEpollEvent event;
+  int32_t              epoll_fd;
+  uint8_t              dummy[4];
+  PWebSocketEpollEvent event;
 } WebSocketEpollLoopArgs, *PWebSocketEpollLoopArgs;
 
 typedef struct {
-    size_t  capacity;
-    char*   request;
-    char*   response;
-    uint8_t dummy[6];
+  size_t  capacity;
+  char*   request;
+  char*   response;
+  uint8_t dummy[6];
 } WebSocketRawBuffer, *PWebSocketRawBuffer;
 
 typedef enum {
-    WEBSOCKET_SYSCALL_ERROR = -1
+  WEBSOCKET_SYSCALL_ERROR = -1
 } WebSocketSysCallErrorCode;
 
 /*----------------------------------------------------------------------------*/

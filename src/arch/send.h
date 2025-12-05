@@ -11,7 +11,7 @@ static inline ssize_t internal_sendto(
     struct sockaddr* dest_addr,
     const socklen_t  addr_len)
 {
-    return linux_x8664_sendto(sock_fd, buf, len, flags, dest_addr, addr_len);
+  return linux_x8664_sendto(sock_fd, buf, len, flags, dest_addr, addr_len);
 }
 
 #endif

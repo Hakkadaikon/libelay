@@ -5,6 +5,6 @@
 
 static inline ssize_t internal_write(const int32_t fd, const void* buf, const size_t count)
 {
-    return linux_x8664_write(fd, buf, count);
+  return linux_x8664_write(fd, buf, count);
 }
 #endif

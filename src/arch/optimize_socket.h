@@ -5,7 +5,7 @@
 
 static inline int32_t internal_fcntl(const int32_t fd, const int32_t cmd, const int64_t arg)
 {
-    return linux_x8664_fcntl(fd, cmd, arg);
+  return linux_x8664_fcntl(fd, cmd, arg);
 }
 
 static inline int32_t internal_setsockopt(
@@ -15,7 +15,7 @@ static inline int32_t internal_setsockopt(
     const void*     optval,
     const socklen_t optlen)
 {
-    return linux_x8664_setsockopt(sock_fd, level, optname, optval, optlen);
+  return linux_x8664_setsockopt(sock_fd, level, optname, optval, optlen);
 }
 
 #endif

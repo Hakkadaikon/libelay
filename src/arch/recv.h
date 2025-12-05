@@ -11,7 +11,7 @@ static inline ssize_t internal_recvfrom(
     struct sockaddr* src_addr,
     socklen_t*       addr_len)
 {
-    return linux_x8664_recvfrom(sock_fd, buf, len, flags, src_addr, addr_len);
+  return linux_x8664_recvfrom(sock_fd, buf, len, flags, src_addr, addr_len);
 }
 
 #endif

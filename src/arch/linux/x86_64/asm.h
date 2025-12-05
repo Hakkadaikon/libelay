@@ -6,84 +6,84 @@
 extern void var_dump_local(const int32_t fd, const char* str, const int32_t value);
 extern void log_dump_local(const int32_t fd, const char* str);
 
-#define SYSCALL_EARLY_RETURN(ret)            \
-    {                                        \
-        if (ret < 0) {                       \
-            if (ret != -EAGAIN) {            \
-                log_dump_local(1, __func__); \
-                var_dump_local(1, ":", ret); \
-            }                                \
-            errno = -ret;                    \
-            return -1;                       \
-        }                                    \
-    }
-#define SYSCALL_SIZE_EARLY_RETURN(ret)       \
-    {                                        \
-        if (ret < 0) {                       \
-            if (ret != -EAGAIN) {            \
-                log_dump_local(1, __func__); \
-                var_dump_local(1, ":", ret); \
-            }                                \
-            errno = -ret;                    \
-            return -1;                       \
-        }                                    \
-    }
+#define SYSCALL_EARLY_RETURN(ret)    \
+  {                                  \
+    if (ret < 0) {                   \
+      if (ret != -EAGAIN) {          \
+        log_dump_local(1, __func__); \
+        var_dump_local(1, ":", ret); \
+      }                              \
+      errno = -ret;                  \
+      return -1;                     \
+    }                                \
+  }
+#define SYSCALL_SIZE_EARLY_RETURN(ret) \
+  {                                    \
+    if (ret < 0) {                     \
+      if (ret != -EAGAIN) {            \
+        log_dump_local(1, __func__);   \
+        var_dump_local(1, ":", ret);   \
+      }                                \
+      errno = -ret;                    \
+      return -1;                       \
+    }                                  \
+  }
 
 #define linux_x8664_asm_syscall6(                    \
     syscall_num, arg1, arg2, arg3, arg4, arg5, arg6) \
-    __linux_x8664_asm_syscall6(                      \
-        (int64_t)syscall_num,                        \
-        (int64_t)arg1,                               \
-        (int64_t)arg2,                               \
-        (int64_t)arg3,                               \
-        (int64_t)arg4,                               \
-        (int64_t)arg5,                               \
-        (int64_t)arg6)
+  __linux_x8664_asm_syscall6(                        \
+      (int64_t)syscall_num,                          \
+      (int64_t)arg1,                                 \
+      (int64_t)arg2,                                 \
+      (int64_t)arg3,                                 \
+      (int64_t)arg4,                                 \
+      (int64_t)arg5,                                 \
+      (int64_t)arg6)
 
 #define linux_x8664_asm_syscall5(              \
     syscall_num, arg1, arg2, arg3, arg4, arg5) \
-    __linux_x8664_asm_syscall5(                \
-        (int64_t)syscall_num,                  \
-        (int64_t)arg1,                         \
-        (int64_t)arg2,                         \
-        (int64_t)arg3,                         \
-        (int64_t)arg4,                         \
-        (int64_t)arg5)
+  __linux_x8664_asm_syscall5(                  \
+      (int64_t)syscall_num,                    \
+      (int64_t)arg1,                           \
+      (int64_t)arg2,                           \
+      (int64_t)arg3,                           \
+      (int64_t)arg4,                           \
+      (int64_t)arg5)
 
 #define linux_x8664_asm_syscall4(        \
     syscall_num, arg1, arg2, arg3, arg4) \
-    __linux_x8664_asm_syscall4(          \
-        (int64_t)syscall_num,            \
-        (int64_t)arg1,                   \
-        (int64_t)arg2,                   \
-        (int64_t)arg3,                   \
-        (int64_t)arg4)
+  __linux_x8664_asm_syscall4(            \
+      (int64_t)syscall_num,              \
+      (int64_t)arg1,                     \
+      (int64_t)arg2,                     \
+      (int64_t)arg3,                     \
+      (int64_t)arg4)
 
 #define linux_x8664_asm_syscall3(  \
     syscall_num, arg1, arg2, arg3) \
-    __linux_x8664_asm_syscall3(    \
-        (int64_t)syscall_num,      \
-        (int64_t)arg1,             \
-        (int64_t)arg2,             \
-        (int64_t)arg3)
+  __linux_x8664_asm_syscall3(      \
+      (int64_t)syscall_num,        \
+      (int64_t)arg1,               \
+      (int64_t)arg2,               \
+      (int64_t)arg3)
 
 #define linux_x8664_asm_syscall2( \
     syscall_num, arg1, arg2)      \
-    __linux_x8664_asm_syscall2(   \
-        (int64_t)syscall_num,     \
-        (int64_t)arg1,            \
-        (int64_t)arg2)
+  __linux_x8664_asm_syscall2(     \
+      (int64_t)syscall_num,       \
+      (int64_t)arg1,              \
+      (int64_t)arg2)
 
 #define linux_x8664_asm_syscall1( \
     syscall_num, arg1)            \
-    __linux_x8664_asm_syscall1(   \
-        (int64_t)syscall_num,     \
-        (int64_t)arg1)
+  __linux_x8664_asm_syscall1(     \
+      (int64_t)syscall_num,       \
+      (int64_t)arg1)
 
 #define linux_x8664_asm_syscall0( \
     syscall_num, arg1)            \
-    __linux_x8664_asm_syscall0(   \
-        (int64_t)syscall_num)
+  __linux_x8664_asm_syscall0(     \
+      (int64_t)syscall_num)
 
 extern int32_t __linux_x8664_asm_syscall6(
     int64_t syscall_num,

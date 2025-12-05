@@ -14,17 +14,17 @@ static inline ssize_t linux_x8664_recvfrom(
     struct sockaddr* src_addr,
     socklen_t*       addrlen)
 {
-    int32_t ret = linux_x8664_asm_syscall6(
-        __NR_recvfrom,
-        sock_fd,
-        buf,
-        len,
-        flags,
-        src_addr,
-        addrlen);
+  int32_t ret = linux_x8664_asm_syscall6(
+      __NR_recvfrom,
+      sock_fd,
+      buf,
+      len,
+      flags,
+      src_addr,
+      addrlen);
 
-    SYSCALL_SIZE_EARLY_RETURN(ret);
-    return ret;
+  SYSCALL_SIZE_EARLY_RETURN(ret);
+  return ret;
 }
 
 #endif

@@ -4,46 +4,46 @@
 #include "../../util/types.h"
 
 typedef union {
-    int32_t __sival_int;
-    void*   __sival_ptr;
+  int32_t __sival_int;
+  void*   __sival_ptr;
 } sigval_t;
 
 struct siginfo_t {
-    int32_t si_signo;    /* Signal number                         */
-    int32_t si_errno;    /* An errno value                        */
-    int32_t si_code;     /* Signal code                           */
-    int32_t si_trapno;   /* Trap number that caused               */
-                         /* hardware-generated signal             */
-                         /* (unused on most architectures)        */
-    pid_t    si_pid;     /* Sending process ID                    */
-    uid_t    si_uid;     /* Real user ID of sending process       */
-    int32_t  si_status;  /* Exit value or signal                  */
-    clock_t  si_utime;   /* User time consumed                    */
-    clock_t  si_stime;   /* System time consumed                  */
-    sigval_t si_value;   /* Signal value                          */
-    int32_t  si_int;     /* POSIX.1b signal                       */
-    void*    si_ptr;     /* POSIX.1b signal                       */
-    int32_t  si_overrun; /* Timer overrun count                   */
-                         /* POSIX.1b timers                       */
-    int32_t si_timerid;  /* Timer ID; POSIX.1b timers             */
-    void*   si_addr;     /* Memory location which caused fault    */
-    long    si_band;     /* Band event (was int in                */
-                         /* glibc 2.3.2 and earlier)              */
-    int32_t si_fd;       /* File descriptor                       */
-    int16_t si_addr_lsb; /* Least significant bit of address      */
-                         /* (since Linux 2.6.32)                  */
-    void* si_lower;      /* Lower bound when address violation    */
-                         /* occurred (since Linux 3.19)           */
-    void* si_upper;      /* Upper bound when address violation    */
-                         /* occurred (since Linux 3.19)           */
-    int32_t si_pkey;     /* Protection key on PTE that caused     */
-                         /* fault (since Linux 4.6)               */
-    void* si_call_addr;  /* Address of system call instruction    */
-                         /* (since Linux 3.5)                     */
-    int32_t si_syscall;  /* Number of attempted system call       */
-                         /* (since Linux 3.5)                     */
-    uint32_t si_arch;    /* Architecture of attempted system call */
-                         /* (since Linux 3.5)                     */
+  int32_t si_signo;    /* Signal number                         */
+  int32_t si_errno;    /* An errno value                        */
+  int32_t si_code;     /* Signal code                           */
+  int32_t si_trapno;   /* Trap number that caused               */
+                       /* hardware-generated signal             */
+                       /* (unused on most architectures)        */
+  pid_t    si_pid;     /* Sending process ID                    */
+  uid_t    si_uid;     /* Real user ID of sending process       */
+  int32_t  si_status;  /* Exit value or signal                  */
+  clock_t  si_utime;   /* User time consumed                    */
+  clock_t  si_stime;   /* System time consumed                  */
+  sigval_t si_value;   /* Signal value                          */
+  int32_t  si_int;     /* POSIX.1b signal                       */
+  void*    si_ptr;     /* POSIX.1b signal                       */
+  int32_t  si_overrun; /* Timer overrun count                   */
+                       /* POSIX.1b timers                       */
+  int32_t si_timerid;  /* Timer ID; POSIX.1b timers             */
+  void*   si_addr;     /* Memory location which caused fault    */
+  long    si_band;     /* Band event (was int in                */
+                       /* glibc 2.3.2 and earlier)              */
+  int32_t si_fd;       /* File descriptor                       */
+  int16_t si_addr_lsb; /* Least significant bit of address      */
+                       /* (since Linux 2.6.32)                  */
+  void* si_lower;      /* Lower bound when address violation    */
+                       /* occurred (since Linux 3.19)           */
+  void* si_upper;      /* Upper bound when address violation    */
+                       /* occurred (since Linux 3.19)           */
+  int32_t si_pkey;     /* Protection key on PTE that caused     */
+                       /* fault (since Linux 4.6)               */
+  void* si_call_addr;  /* Address of system call instruction    */
+                       /* (since Linux 3.5)                     */
+  int32_t si_syscall;  /* Number of attempted system call       */
+                       /* (since Linux 3.5)                     */
+  uint32_t si_arch;    /* Architecture of attempted system call */
+                       /* (since Linux 3.5)                     */
 };
 
 typedef uint64_t         sigset_t;
@@ -56,23 +56,23 @@ typedef restorefunc_t*   sigrestore_t;
 
 struct sigaction {
 #if defined __USE_POSIX199309 || defined __USE_XOPEN_EXTENDED
-    union {
-        sighandler_t sa_handler;
-        sigaction_t  sa_sigaction;
-    } __sigaction_handler;
+  union {
+    sighandler_t sa_handler;
+    sigaction_t  sa_sigaction;
+  } __sigaction_handler;
 #define sa_handler __sigaction_handler.sa_handler
 #define sa_sigaction __sigaction_handler.sa_sigaction
 #else
-    sighandler_t sa_handler;
+  sighandler_t sa_handler;
 #endif
-    // glibc
-    // sigset_t     sa_mask;
-    // uint64_t     sa_flags;
-    // sigrestore_t sa_restorer;
-    // kernel
-    uint64_t     sa_flags;
-    sigrestore_t sa_restorer;
-    sigset_t     sa_mask;
+  // glibc
+  // sigset_t     sa_mask;
+  // uint64_t     sa_flags;
+  // sigrestore_t sa_restorer;
+  // kernel
+  uint64_t     sa_flags;
+  sigrestore_t sa_restorer;
+  sigset_t     sa_mask;
 };
 
 #ifndef SA_RESTORER

@@ -5,12 +5,12 @@
 
 static inline void* internal_memcpy(void* dest, const void* src, size_t size)
 {
-    return linux_x8664_memcpy(dest, src, size);
+  return linux_x8664_memcpy(dest, src, size);
 }
 
 static inline void* internal_memset(void* s, const int32_t c, const size_t size)
 {
-    return linux_x8664_memset(s, c, size);
+  return linux_x8664_memset(s, c, size);
 }
 
 /*
@@ -25,7 +25,7 @@ static inline void* internal_memset(void* s, const int32_t c, const size_t size)
  */
 static inline int32_t internal_memset_s(void* s, const size_t smax, const int32_t c, const size_t n)
 {
-    return linux_x8664_memset_s(s, smax, c, n);
+  return linux_x8664_memset_s(s, smax, c, n);
 }
 
 #endif

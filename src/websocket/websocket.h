@@ -86,39 +86,39 @@ typedef int64_t ssize_t;
  * @brief WebSocket frame type
  */
 typedef enum {
-    WEBSOCKET_OP_CODE_TEXT   = 0x1,  ///< When this frame is received, Invokes the user callback.
-    WEBSOCKET_OP_CODE_BINARY = 0x2,  ///< When this frame is received, Invokes the user callback.
-    WEBSOCKET_OP_CODE_CLOSE  = 0x8,  ///< When this frame is received, closes the client socket.
-    WEBSOCKET_OP_CODE_PING   = 0x9,  ///< When this frame is received, this server replies with a Pong.
-    WEBSOCKET_OP_CODE_PONG   = 0xA,  ///< Pong frame.
+  WEBSOCKET_OP_CODE_TEXT   = 0x1,  ///< When this frame is received, Invokes the user callback.
+  WEBSOCKET_OP_CODE_BINARY = 0x2,  ///< When this frame is received, Invokes the user callback.
+  WEBSOCKET_OP_CODE_CLOSE  = 0x8,  ///< When this frame is received, closes the client socket.
+  WEBSOCKET_OP_CODE_PING   = 0x9,  ///< When this frame is received, this server replies with a Pong.
+  WEBSOCKET_OP_CODE_PONG   = 0xA,  ///< Pong frame.
 } WebSocketOpCode;
 
 /**
  * @brief Error code when calling a WebSocket function
  */
 typedef enum {
-    WEBSOCKET_ERRORCODE_FATAL_ERROR        = -3,  ///< When this code is received, This server will terminate processing.
-    WEBSOCKET_ERRORCODE_SOCKET_CLOSE_ERROR = -2,  ///< When this code is received, This server closes the client socket.
-    WEBSOCKET_ERRORCODE_CONTINUABLE_ERROR  = -1,  ///< When this code is received, This server will not proceed to the next epoll loop and will continue.
-    WEBSOCKET_ERRORCODE_NONE               = 0,   ///< Normal code. No action.
+  WEBSOCKET_ERRORCODE_FATAL_ERROR        = -3,  ///< When this code is received, This server will terminate processing.
+  WEBSOCKET_ERRORCODE_SOCKET_CLOSE_ERROR = -2,  ///< When this code is received, This server closes the client socket.
+  WEBSOCKET_ERRORCODE_CONTINUABLE_ERROR  = -1,  ///< When this code is received, This server will not proceed to the next epoll loop and will continue.
+  WEBSOCKET_ERRORCODE_NONE               = 0,   ///< Normal code. No action.
 } WebSocketErrorCode;
 
 /**
  * @brief Result of parsing the WebSocket frame
  */
 typedef struct _WebSocketFrame {
-    uint8_t         fin;
-    uint8_t         rsv1;
-    uint8_t         rsv2;
-    uint8_t         rsv3;
-    WebSocketOpCode opcode;
-    uint8_t         mask;
-    uint8_t         payload_len;
-    uint8_t         dummy1[6];
-    uint64_t        ext_payload_len;
-    uint8_t         masking_key[4];
-    char*           payload;
-    uint8_t         dummy2[3];
+  uint8_t         fin;
+  uint8_t         rsv1;
+  uint8_t         rsv2;
+  uint8_t         rsv3;
+  WebSocketOpCode opcode;
+  uint8_t         mask;
+  uint8_t         payload_len;
+  uint8_t         dummy1[6];
+  uint64_t        ext_payload_len;
+  uint8_t         masking_key[4];
+  char*           payload;
+  uint8_t         dummy2[3];
 } WebSocketFrame, *PWebSocketFrame;
 
 /**
@@ -153,27 +153,27 @@ typedef void (*PWebSocketDisconnectCallback)(
  * @brief User callback list to pass to the WebSocket library.
  */
 typedef struct {
-    PWebSocketReceiveCallback    receive_callback;     ///< @see PWebSocketReceiveCallback
-    PWebSocketConnectCallback    connect_callback;     ///< @see PWebSocketConnectCallback
-    PWebSocketDisconnectCallback disconnect_callback;  ///< @see PWebSocketDisconnectCallback
+  PWebSocketReceiveCallback    receive_callback;     ///< @see PWebSocketReceiveCallback
+  PWebSocketConnectCallback    connect_callback;     ///< @see PWebSocketConnectCallback
+  PWebSocketDisconnectCallback disconnect_callback;  ///< @see PWebSocketDisconnectCallback
 } WebSocketCallbacks, *PWebSocketCallbacks;
 
 /**
  * @brief Arguments to pass to websocket_init()
  */
 typedef struct {
-    int32_t port_num;  ///< WebSocket port number
-    int32_t backlog;   ///< Listen queue size
+  int32_t port_num;  ///< WebSocket port number
+  int32_t backlog;   ///< Listen queue size
 } WebSocketInitArgs, *PWebSocketInitArgs;
 
 /**
  * @brief Arguments to pass to websocket_loop()
  */
 typedef struct {
-    int32_t            server_sock;      ///< Socket descriptor obtained by websocket_server_init() function
-    int32_t            dummy;            ///< dummy
-    size_t             buffer_capacity;  ///< Capacity of the send and receive buffer for one client.
-    WebSocketCallbacks callbacks;        ///< @see WebSocketCallBacks
+  int32_t            server_sock;      ///< Socket descriptor obtained by websocket_server_init() function
+  int32_t            dummy;            ///< dummy
+  size_t             buffer_capacity;  ///< Capacity of the send and receive buffer for one client.
+  WebSocketCallbacks callbacks;        ///< @see WebSocketCallBacks
 } WebSocketLoopArgs, *PWebSocketLoopArgs;
 
 /**
