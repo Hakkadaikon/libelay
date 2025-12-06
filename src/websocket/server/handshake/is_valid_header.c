@@ -1,6 +1,6 @@
-#include "../../crypto/base64.h"
-#include "../../util/string.h"
-#include "../websocket_local.h"
+#include "../../../crypto/base64.h"
+#include "../../../util/string.h"
+#include "../../websocket_local.h"
 
 #define IS_VALID_KEY(value, expected) \
   is_compare_str(value, expected, HTTP_HEADER_KEY_CAPACITY, sizeof(expected), false)

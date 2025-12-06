@@ -1,4 +1,4 @@
-#include "../websocket_local.h"
+#include "../../websocket_local.h"
 
 bool is_valid_request(PHTTPRequest restrict request)
 {
