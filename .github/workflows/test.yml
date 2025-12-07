@@ -1,81 +1,47 @@
-#name: WebSocket Tests
-#
-#on:
-#  push:
-#  pull_request:
-#
-#jobs:
-#  build-and-test:
-#    runs-on: ${{ matrix.os }}-${{ matrix.version }}
-#    strategy:
-#      matrix:
-#        include:
-#          - os: ubuntu
-#            version: 22.04
-#            gcc: 9
-#            c_std: 11
-#            cpp_std: 17
-#          - os: ubuntu
-#            version: 24.04
-#            gcc: 14
-#            c_std: 23
-#            cpp_std: 23
-#
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v5
-#
-#      - name: Install dependencies on ubuntu (CC ${{ matrix.gcc }})
-#        if: matrix.os == 'ubuntu'
-#        run: |
-#          sudo apt-get update
-#          sudo apt-get install -y cmake build-essential gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
-#          echo "CC=gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
-#          echo "CXX=g++-${{ matrix.gcc }}" >> $GITHUB_ENV
-#          echo "C_STD=${{ matrix.c_std }}" >> $GITHUB_ENV
-#          echo "CPP_STD=${{ matrix.cpp_std }}" >> $GITHUB_ENV
-#
-#      - name: Install dependencies on macos
-#        if: matrix.os == 'macos'
-#        run: |
-#          brew update
-#          brew reinstall gcc cmake
-#          echo "C_STD=${{ matrix.c_std }}" >> $GITHUB_ENV
-#          echo "CPP_STD=${{ matrix.cpp_std }}" >> $GITHUB_ENV
-#
-#      - name: Build project
-#        shell: bash
-#        run: |
-#          if [ -n "${CC:-}" ]; then
-#            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_STANDARD="${C_STD}" -DCMAKE_C_COMPILER="${CC}"
-#          else
-#            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_STANDARD="${C_STD}"
-#          fi
-#
-#          cmake --build build
-#
-#          if [ -n "${CC:-}" ]; then
-#            make BUILD=release -C examples/echoback CC="${CC}"
-#          else
-#            make BUILD=release -C examples/echoback
-#          fi
-#
-#      - name: Check link
-#        if: matrix.os == 'ubuntu'
-#        shell: bash
-#        run: |
-#          echo "Check ldd"
-#          ldd examples/echoback/bin/wsserver
-#          echo "Check readelf"
-#          readelf --dyn-syms -W examples/echoback/bin/wsserver
-#
-#      - name: Run tests
-#        shell: bash
-#        run: |
-#          if [ -n "${CXX:-}" ]; then
-#            cmake -S tests -B tests/build -DCMAKE_CXX_STANDARD="${CPP_STD}" -DCMAKE_CXX_COMPILER="${CXX}"
-#          else
-#            cmake -S tests -B tests/build -DCMAKE_CXX_STANDARD="${CPP_STD}"
-#          fi
-#          cmake --build tests/build
-#          ctest --test-dir tests/build
+name: WebSocket Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}-${{ matrix.version }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu
+            version: 24.04
+            gcc: 14
+            c_std: 23
+            cpp_std: 23
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install dependencies on ubuntu (CC ${{ matrix.gcc }})
+        if: matrix.os == 'ubuntu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential gcc-${{ matrix.gcc }} g++-${{ matrix.gcc }}
+          echo "CC=gcc-${{ matrix.gcc }}" >> $GITHUB_ENV
+          echo "CXX=g++-${{ matrix.gcc }}" >> $GITHUB_ENV
+          echo "C_STD=${{ matrix.c_std }}" >> $GITHUB_ENV
+          echo "CPP_STD=${{ matrix.cpp_std }}" >> $GITHUB_ENV
+
+      - name: Build project
+        shell: bash
+        run: |
+          if [ -n "${CC:-}" ]; then
+            just debug-build
+          fi
+
+      - name: Check link
+        if: matrix.os == 'ubuntu'
+        shell: bash
+        run: |
+          echo "Check ldd"
+          ldd build/relay
+          echo "Check readelf"
+          readelf --dyn-syms -W build/relay
