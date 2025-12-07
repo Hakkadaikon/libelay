@@ -3,7 +3,7 @@
 #include "../../websocket_local.h"
 
 static char* select_websocket_client_key(PHTTPRequest restrict request);
-static bool  build_response_frame(
+static bool  build_handshake_packet(
    const char* restrict accept_key,
    const int32_t accept_key_capacity,
    char* restrict buffer,
@@ -36,7 +36,7 @@ bool client_handshake(
   if (has_error) {
     str_info("Invalid handshake request : ", buffer->request);
   } else {
-    if (!build_response_frame(accept_key, sizeof(accept_key), buffer->response, buffer->capacity)) {
+    if (!build_handshake_packet(accept_key, sizeof(accept_key), buffer->response, buffer->capacity)) {
       has_error = true;
       goto FINALIZE;
     }
@@ -78,7 +78,7 @@ static char* select_websocket_client_key(PHTTPRequest restrict request)
   return NULL;
 }
 
-static bool build_response_frame(
+static bool build_handshake_packet(
   const char* restrict accept_key,
   const int32_t accept_key_capacity,
   char* restrict buffer,
