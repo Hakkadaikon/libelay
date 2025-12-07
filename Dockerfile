@@ -1,14 +1,16 @@
-FROM ubuntu:24.04 AS build-dev
+FROM debian:bookworm-slim AS build-dev
 WORKDIR /opt/relay
 COPY . /opt/relay
 RUN \
   apt update && \
   apt install -y \
+  build-essential \
   cmake \
-  make \
-  just
+  make
 RUN \
-  just release-build
+  rm -rf build && \
+  cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
+  cmake --build build
 
 FROM scratch AS runtime
 WORKDIR /opt/websocket
