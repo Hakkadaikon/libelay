@@ -3,45 +3,6 @@
 #include "../arch/write.h"
 #include "./string.h"
 
-static inline int32_t calc_digit(int32_t value)
-{
-  int32_t is_negative = (value < 0);
-  if (is_negative) {
-    value = -value;
-  }
-
-  for (int32_t i = 10, j = 1; i < 1000000000; i *= 10, j++) {
-    if (value < i) {
-      return j;
-    }
-  }
-
-  return 10 + is_negative;
-}
-
-static inline size_t safe_itoa(int32_t value, char* restrict buffer, size_t buffer_capacity)
-{
-  int32_t digit       = calc_digit(value);
-  char*   end         = buffer + digit;
-  char*   current     = end;
-  int32_t is_negative = (value < 0);
-
-  if (is_negative) {
-    value = -value;
-  }
-
-  *current-- = '\0';
-  do {
-    *current-- = '0' + (value % 10);
-    value /= 10;
-  } while (value > 0 && current >= buffer);
-
-  if (is_negative && current >= buffer) {
-    *current-- = '-';
-  }
-  return end - (current + 1);
-}
-
 static inline void hex_dump_char(char c)
 {
   unsigned char uc           = (unsigned char)c;
@@ -100,7 +61,7 @@ void var_dump_local(const int32_t fd, const char* restrict str, const int32_t va
   (void)internal_write(fd, str, len);
 
   char   buffer[32];
-  size_t buffer_size      = safe_itoa(value, buffer, sizeof(buffer));
+  size_t buffer_size      = itoa(value, buffer, sizeof(buffer));
   buffer[buffer_size]     = '\n';
   buffer[buffer_size + 1] = '\0';
 

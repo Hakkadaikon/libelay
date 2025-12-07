@@ -211,4 +211,43 @@ static size_t inline strnlen(const char* str, const size_t capacity)
   return len - 1;
 }
 
+static inline int32_t calc_digit(int32_t value)
+{
+  int32_t is_negative = (value < 0);
+  if (is_negative) {
+    value = -value;
+  }
+
+  for (int32_t i = 10, j = 1; i < 1000000000; i *= 10, j++) {
+    if (value < i) {
+      return j;
+    }
+  }
+
+  return 10 + is_negative;
+}
+
+static inline size_t itoa(int32_t value, char* buffer, size_t buffer_capacity)
+{
+  int32_t digit       = calc_digit(value);
+  char*   end         = buffer + digit;
+  char*   current     = end;
+  int32_t is_negative = (value < 0);
+
+  if (is_negative) {
+    value = -value;
+  }
+
+  *current-- = '\0';
+  do {
+    *current-- = '0' + (value % 10);
+    value /= 10;
+  } while (value > 0 && current >= buffer);
+
+  if (is_negative && current >= buffer) {
+    *current-- = '-';
+  }
+  return end - (current + 1);
+}
+
 #endif
