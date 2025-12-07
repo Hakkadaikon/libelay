@@ -8,7 +8,7 @@
 #define base64_output_block_size 4
 #define base64_num_of_char_bit 6
 #define is_base64_char(c) \
-  (is_lower_char(c) || is_upper_char(c) || is_number_char(c) || c == '+' || c == '/')
+  (is_lower(c) || is_upper(c) || is_digit(c) || c == '+' || c == '/')
 #define base64_get_array_value(array, offset, capacity) \
   ((offset < capacity) ? array[offset] : 0)
 #define base64_char_mask \
@@ -55,7 +55,7 @@ static inline bool base64_encode(const uint8_t* input, const size_t input_length
 
 static inline bool is_base64(const char* str)
 {
-  size_t len = get_str_len(str);
+  size_t len = strlen(str);
   if (len < base64_output_block_size) {
     return false;
   }

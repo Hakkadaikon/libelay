@@ -3,7 +3,7 @@
 #include "../../websocket_local.h"
 
 #define IS_VALID_KEY(value, expected) \
-  is_compare_str(value, expected, HTTP_HEADER_KEY_CAPACITY, sizeof(expected), false)
+  strncmp_sensitive(value, expected, HTTP_HEADER_KEY_CAPACITY, sizeof(expected), false)
 
 static bool is_valid_request_header_line(PHTTPRequestHeaderLine restrict line);
 static bool is_valid_host(const char* restrict host);
@@ -92,7 +92,7 @@ static bool is_valid_version(const char* restrict value)
 
 static bool is_valid_websocket_key(const char* restrict value)
 {
-  if (get_str_nlen(value, HTTP_HEADER_VALUE_CAPACITY) < 16) {
+  if (strnlen(value, HTTP_HEADER_VALUE_CAPACITY) < 16) {
     log_error("Invalid websocket request header [Key: Sec-WebSocket-Key] Length is less than 16.\n");
     return false;
   }

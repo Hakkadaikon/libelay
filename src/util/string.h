@@ -3,24 +3,24 @@
 
 #include "../util/types.h"
 
-#define ptr_value(ptr) (*ptr)
+#define value(ptr) (*ptr)
 #define is_null(str) (str == NULL)
 #define is_empty_value(c) (c == '\0')
-#define is_empty(str) (is_empty_value(ptr_value(str)))
+#define is_empty(str) (is_empty_value(value(str)))
 #define is_null_or_empty(str) (is_null(str) || is_empty(str))
 #define is_line_break(c) ((c == '\r') || (c == '\n'))
-#define is_white_space(c) \
-  ((c == ' ') ||          \
-   (c == '\t') ||         \
-   (c == '\r') ||         \
-   (c == '\n') ||         \
-   (c == '\v') ||         \
+#define is_space(c) \
+  ((c == ' ') ||    \
+   (c == '\t') ||   \
+   (c == '\r') ||   \
+   (c == '\n') ||   \
+   (c == '\v') ||   \
    (c == '\f'))
-#define is_lower_char(c) ((c >= 'a') && (c <= 'z'))
-#define is_upper_char(c) ((c >= 'A') && (c <= 'Z'))
-#define is_number_char(c) ((c >= '0') && (c <= '9'))
+#define is_lower(c) ((c >= 'a') && (c <= 'z'))
+#define is_upper(c) ((c >= 'A') && (c <= 'Z'))
+#define is_digit(c) ((c >= '0') && (c <= '9'))
 
-static inline bool is_utf8_white_space(const char* str)
+static inline bool is_utf8_space(const char* str)
 {
   // UTF-8: 0xE3 0x80 0x80
   return (str[0] == '\xE3') &&
@@ -28,7 +28,7 @@ static inline bool is_utf8_white_space(const char* str)
          (str[2] == '\x80');
 }
 
-static inline bool compare_case_sensitive(const char a, const char b)
+static inline bool chrcmp_sensitive(const char a, const char b)
 {
   if (a != b) {
     return false;
@@ -37,7 +37,7 @@ static inline bool compare_case_sensitive(const char a, const char b)
   return true;
 }
 
-static inline bool compare(const char a, const char b)
+static inline bool chrcmp(const char a, const char b)
 {
   char lower_a = (a >= 'A' && a <= 'Z') ? (a + 'a' - 'A') : (a);
   char lower_b = (b >= 'A' && b <= 'Z') ? (b + 'a' - 'A') : (b);
@@ -49,7 +49,7 @@ static inline bool compare(const char a, const char b)
   return true;
 }
 
-static inline bool is_compare_str(
+static inline bool strncmp_sensitive(
   const char*  str1,
   const char*  str2,
   const size_t str1capacity,
@@ -62,7 +62,7 @@ static inline bool is_compare_str(
   }
 
   typedef bool (*PCompareFunc)(const char a, const char b);
-  PCompareFunc compare_func = (case_sensitive) ? compare_case_sensitive : compare;
+  PCompareFunc compare_func = (case_sensitive) ? chrcmp_sensitive : chrcmp;
 
   for (size_t i = 0; i < capacity; i++) {
     if (!compare_func(str1[i], str2[i])) {
@@ -73,7 +73,12 @@ static inline bool is_compare_str(
   return true;
 }
 
-static inline int32_t search_str(const char* base, const size_t base_len, const char* target, const size_t target_len, const bool case_sensitive)
+static inline int32_t strpos_sensitive(
+  const char*  base,
+  const size_t base_len,
+  const char*  target,
+  const size_t target_len,
+  const bool   case_sensitive)
 {
   if (is_null_or_empty(base) || base_len <= 0 || target_len > base_len) {
     return -1;
@@ -84,7 +89,7 @@ static inline int32_t search_str(const char* base, const size_t base_len, const 
   }
 
   for (size_t base_pos = 0; base_pos <= (base_len - target_len); base_pos++) {
-    if (is_compare_str(&base[base_pos], target, base_len, target_len, case_sensitive)) {
+    if (strncmp_sensitive(&base[base_pos], target, base_len, target_len, case_sensitive)) {
       return base_pos;
     }
   }
@@ -92,12 +97,17 @@ static inline int32_t search_str(const char* base, const size_t base_len, const 
   return -1;
 }
 
-static inline bool is_contain_str(const char* base, const size_t base_len, const char* target, const size_t target_len, const bool case_sensitive)
+static inline bool strstr_sensitive(
+  const char*  base,
+  const size_t base_len,
+  const char*  target,
+  const size_t target_len,
+  const bool   case_sensitive)
 {
-  return (search_str(base, base_len, target, target_len, case_sensitive) != -1);
+  return (strpos_sensitive(base, base_len, target, target_len, case_sensitive) != -1);
 }
 
-static inline int32_t skip_white_space(const char* buffer, const size_t buffer_size)
+static inline int32_t skip_space(const char* buffer, const size_t buffer_size)
 {
   if (is_null(buffer) || buffer_size <= 0) {
     return -1;
@@ -105,14 +115,14 @@ static inline int32_t skip_white_space(const char* buffer, const size_t buffer_s
 
   size_t pos = 0;
   while (!is_empty(&buffer[pos]) && pos < buffer_size) {
-    char current = ptr_value(&buffer[pos]);
-    if (is_white_space(current)) {
+    char current = value(&buffer[pos]);
+    if (is_space(current)) {
       pos++;
       continue;
     }
 
     if (pos + 2 < buffer_size) {
-      if (is_utf8_white_space(&buffer[pos])) {
+      if (is_utf8_space(&buffer[pos])) {
         pos += 3;
         continue;
       }
@@ -127,7 +137,7 @@ static inline int32_t skip_white_space(const char* buffer, const size_t buffer_s
 static inline int32_t skip_word(const char* buffer, const size_t buffer_size)
 {
   for (size_t i = 0; i < buffer_size; i++) {
-    if (is_white_space(buffer[i])) {
+    if (is_space(buffer[i])) {
       return i;
     }
 
@@ -139,7 +149,7 @@ static inline int32_t skip_word(const char* buffer, const size_t buffer_size)
       continue;
     }
 
-    if (is_utf8_white_space(&buffer[i])) {
+    if (is_utf8_space(&buffer[i])) {
       return i;
     }
   }
@@ -183,7 +193,7 @@ static inline int32_t skip_token(const char* buffer, const size_t buffer_size, c
   return -1;
 }
 
-static size_t inline get_str_len(const char* str)
+static size_t inline strlen(const char* str)
 {
   int32_t len = 0;
   while (str[len++] != '\0')
@@ -192,7 +202,7 @@ static size_t inline get_str_len(const char* str)
   return len - 1;
 }
 
-static size_t inline get_str_nlen(const char* str, const size_t capacity)
+static size_t inline strnlen(const char* str, const size_t capacity)
 {
   int32_t len = 0;
   while (str[len++] != '\0' && len < capacity)

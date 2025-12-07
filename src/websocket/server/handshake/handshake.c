@@ -41,7 +41,7 @@ bool client_handshake(
       goto FINALIZE;
     }
 
-    size_t response_len = get_str_nlen(buffer->response, buffer->capacity);
+    size_t response_len = strnlen(buffer->response, buffer->capacity);
     if (response_len == 0) {
       has_error = true;
       goto FINALIZE;
@@ -69,7 +69,7 @@ static char* select_websocket_client_key(PHTTPRequest restrict request)
 {
   for (size_t i = 0; i < request->header_size; i++) {
     PHTTPRequestHeaderLine line = &request->headers[i];
-    if (is_compare_str(line->key, "Sec-WebSocket-Key", sizeof(line->key), 17, false)) {
+    if (strncmp_sensitive(line->key, "Sec-WebSocket-Key", sizeof(line->key), 17, false)) {
       return line->value;
     }
   }
@@ -90,7 +90,7 @@ static bool build_handshake_packet(
     "Connection: Upgrade\r\n"
     "Sec-WebSocket-Accept: ";
   const size_t OK_MESSAGE_LEN    = sizeof(OK_MESSAGE) - 1;
-  const size_t ACCEPT_KEY_LEN    = get_str_nlen(accept_key, accept_key_capacity);
+  const size_t ACCEPT_KEY_LEN    = strnlen(accept_key, accept_key_capacity);
   const size_t REQUIRED_CAPACITY = OK_MESSAGE_LEN + ACCEPT_KEY_LEN + 5;
 
   if (capacity <= REQUIRED_CAPACITY) {

@@ -78,7 +78,7 @@ void log_dump_local(const int32_t fd, const char* restrict str)
     return;
   }
 
-  size_t len = get_str_len(str);
+  size_t len = strlen(str);
   if (len == 0) {
     return;
   }
@@ -92,7 +92,7 @@ void var_dump_local(const int32_t fd, const char* restrict str, const int32_t va
     return;
   }
 
-  size_t len = get_str_len(str);
+  size_t len = strlen(str);
   if (len == 0) {
     return;
   }

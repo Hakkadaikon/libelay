@@ -1,8 +1,8 @@
 #ifndef NOSTR_ALLOCATOR_H_
 #define NOSTR_ALLOCATOR_H_
 
-#include "./types.h"
 #include "../arch/linux/errno.h"
+#include "./types.h"
 // extern void* alloca(size_t __size);
 #undef alloca
 #undef __alloca
