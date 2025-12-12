@@ -11,9 +11,9 @@ _No one can interfere with this freedom._
 
 _Yes... even "libc"._
 
-A high-performance, single-binary Nostr relay written in C.
-
 ![icon](https://github.com/user-attachments/assets/00f6766e-7240-437b-bd59-e01ff868d01d)
+
+A high-performance, single-binary Nostr relay written in C.
 
 ## Build
 
