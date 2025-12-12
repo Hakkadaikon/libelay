@@ -1,6 +1,6 @@
 FROM debian:bookworm-slim AS build-dev
-WORKDIR /opt/relay
-COPY . /opt/relay
+WORKDIR /opt/libelay
+COPY . /opt/libelay
 RUN \
   apt update && \
   apt install -y \
@@ -13,8 +13,8 @@ RUN \
   cmake --build build
 
 FROM scratch AS runtime
-WORKDIR /opt/websocket
+WORKDIR /opt/libelay
 
-COPY --from=build-dev /opt/relay/build/relay /opt/relay/bin/
+COPY --from=build-dev /opt/libelay/build/libelay /opt/libelay/bin/
 
-ENTRYPOINT ["/opt/relay/bin/relay"]
+ENTRYPOINT ["/opt/libelay/bin/libelay"]

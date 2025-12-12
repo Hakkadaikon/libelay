@@ -1,8 +1,17 @@
-# onion-relay
+# Libelay
 
 ⚠️Warning: Not implemented yet⚠️
 
-Nostr onion reley
+"liberty" / "liberation" + "nostr relay"
+[lih-beh-lay]
+
+When it comes to Nostr, it implies freedom.
+
+No one can interfere with this freedom.
+
+Yes... even "libc".
+
+A high-performance, single-binary Nostr relay written in C.
 
 ![icon](https://github.com/user-attachments/assets/6747414b-d35f-4e1e-80ca-be8c039a4055)
 
@@ -10,7 +19,7 @@ Nostr onion reley
 
 ```shell
 git clone git@github.com:Hakkadaikon/onion-relay.git
-cd onion-relay
+cd libelay
 
 # debug build
 just debug-build
@@ -18,7 +27,7 @@ just debug-build
 # release build
 just release-build
 
-./build/relay
+./build/libelay
 ```
 
 ## Support
@@ -48,7 +57,7 @@ just release-build
 
 - Linux : Ubuntu (24.04) x86_64 only
 
-## Dependencies
+## Dependencies (develop)
 
 - [clang-format](https://github.com/llvm/llvm-project/tree/main/clang/tools/clang-format)
 - [cmake](https://github.com/Kitware/CMake)
