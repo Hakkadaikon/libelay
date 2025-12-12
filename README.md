@@ -2,14 +2,14 @@
 
 ⚠️Warning: Not implemented yet⚠️
 
-"liberty" / "liberation" + "nostr relay"
+_"liberty" / "liberation" + "nostr relay"_
 [lih-beh-lay]
 
-When it comes to Nostr, it implies freedom.
+_When it comes to Nostr, it implies freedom._
 
-No one can interfere with this freedom.
+_No one can interfere with this freedom._
 
-Yes... even "libc".
+_Yes... even "libc"._
 
 A high-performance, single-binary Nostr relay written in C.
 
