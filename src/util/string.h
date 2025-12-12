@@ -49,6 +49,24 @@ static inline bool chrcmp(const char a, const char b)
   return true;
 }
 
+static inline bool strncmp(
+  const char*  str1,
+  const char*  str2,
+  const size_t capacity)
+{
+  if (capacity == 0) {
+    return false;
+  }
+
+  for (size_t i = 0; i < capacity; i++) {
+    if (!chrcmp(str1[i], str2[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 static inline bool strncmp_sensitive(
   const char*  str1,
   const char*  str2,
