@@ -63,6 +63,7 @@ just release-build
 - [cmake](https://github.com/Kitware/CMake)
 - [googletest](https://github.com/google/googletest)
 - [just](https://github.com/casey/just)
+- [mado](git@github.com:akiomik/mado.git)
 
 ## Author
 
