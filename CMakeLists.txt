@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(relay C)
+project(libelay C)
 enable_language(ASM)
 
 # Set a default build type if not specified (for single-config generators)
@@ -29,32 +29,32 @@ set(
 )
 
 # Create the static library target including C and assembly files
-#add_executable(relay ${SRC_FILES} ${ASM_FILES})
-add_executable(relay ${SRC_FILES})
+#add_executable(libelay ${SRC_FILES} ${ASM_FILES})
+add_executable(libelay ${SRC_FILES})
 
 # Set the output directory for the static library to the "lib" folder in the build directory
-set_target_properties(relay PROPERTIES
+set_target_properties(libelay PROPERTIES
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
 )
 
 # Add the src directory to the include path
-target_include_directories(relay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_include_directories(libelay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 target_compile_options(
-  relay PRIVATE
+  libelay PRIVATE
   $<$<CONFIG:Debug>:${DEBUG_COMPILE_OPTIONS}>
   $<$<CONFIG:Release>:${RELEASE_COMPILE_OPTIONS}>
 )
 
 target_compile_definitions(
-  relay PRIVATE
+  libelay PRIVATE
   $<$<CONFIG:Debug>:LOG_LEVEL_DEBUG>
   $<$<CONFIG:Release>:LOG_LEVEL_ERROR>
 )
 
 add_library(asm STATIC ${ASM_FILES})
 
-target_link_libraries(relay PRIVATE asm)
+target_link_libraries(libelay PRIVATE asm)
 
 target_compile_options(
   asm PRIVATE
@@ -62,6 +62,6 @@ target_compile_options(
 )
 
 # Add link options (applied to both Debug and Release configurations)
-#target_link_options(relay PRIVATE -flto)
+#target_link_options(libelay PRIVATE -flto)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 set(BUILD_SHARED_LIBS OFF)
