@@ -17,7 +17,7 @@
  *
  * @return true: Parse was successful / false: Failed parse
  */
-bool to_websocket_entity(const char* restrict raw, const size_t capacity, PWebSocketEntity restrict entity)
+bool to_websocket_entity(const char* restrict raw, const size_t capacity, WebSocketEntity* restrict entity)
 {
   require_not_null(raw, false);
   require_not_null(entity, false);

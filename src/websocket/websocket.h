@@ -46,16 +46,16 @@ typedef struct _WebSocketEntity {
   uint8_t         masking_key[4];
   char*           payload;
   uint8_t         dummy2[3];
-} WebSocketEntity, *PWebSocketEntity;
+} WebSocketEntity;
 
 /**
  * @brief User callback that is called when a websocket packet is received.
  */
-typedef void (*PWebSocketReceiveCallback)(
-  const int32_t    client_sock,      ///< @param[in]     client_sock     Client socket that sent the data
-  PWebSocketEntity entity,           ///< @param[in]     enttity         Parsed websocket packet
-  const size_t     buffer_capacity,  ///< @param[in]     buffer_capacity Response_buffer capacity.
-  char*            response_buffer   ///< @param[in/out] response_buffer This buffer must be used to create the return packet.
+typedef bool (*PWebSocketReceiveCallback)(
+  const int32_t          client_sock,      ///< @param[in]     client_sock     Client socket that sent the data
+  const WebSocketEntity* entity,           ///< @param[in]     enttity         Parsed websocket packet
+  const size_t           buffer_capacity,  ///< @param[in]     buffer_capacity Response_buffer capacity.
+  char*                  response_buffer   ///< @param[in/out] response_buffer This buffer must be used to create the return packet.
 );
 
 /**
@@ -112,7 +112,7 @@ typedef struct {
  *
  * @return true: Parse was successful / false: Failed parse
  */
-bool to_websocket_entity(const char* raw, const size_t packet_size, PWebSocketEntity entity);
+bool to_websocket_entity(const char* raw, const size_t packet_size, WebSocketEntity* entity);
 
 /**
  * @brief Creates raw data to send back to the client
@@ -123,7 +123,7 @@ bool to_websocket_entity(const char* raw, const size_t packet_size, PWebSocketEn
  *
  * @return Size of raw data. If parsing fails, 0 is returned.
  */
-size_t to_websocket_packet(PWebSocketEntity entity, const size_t capacity, char* raw);
+size_t to_websocket_packet(const WebSocketEntity* entity, const size_t capacity, char* raw);
 
 /**
  * @brief Initialize a WebSocket server. socket listen and register signal handler.

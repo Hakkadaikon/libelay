@@ -1,19 +1,24 @@
+#include "util/allocator.h"
 #include "util/log.h"
 #include "websocket/websocket.h"
 
-void websocket_callback_echoback(
-  const int        client_sock,
-  PWebSocketEntity entity,
-  const size_t     buffer_capacity,
-  char*            response_buffer)
+bool websocket_callback_echoback(
+  const int              client_sock,
+  const WebSocketEntity* entity,
+  const size_t           buffer_capacity,
+  char*                  response_buffer)
 {
+  WebSocketEntity response_entity;
+
+  websocket_memcpy(&response_entity, entity, sizeof(WebSocketEntity));
+
   switch (entity->opcode) {
     case WEBSOCKET_OP_CODE_TEXT: {
-      entity->mask       = 0;
-      size_t packet_size = to_websocket_packet(entity, buffer_capacity, response_buffer);
+      response_entity.mask = 0;
+      size_t packet_size   = to_websocket_packet(&response_entity, buffer_capacity, response_buffer);
       if (packet_size == 0) {
         log_error("Failed to create websocket packet.\n");
-        return;
+        return false;
       }
 
       websocket_send(client_sock, packet_size, response_buffer);
@@ -21,15 +26,17 @@ void websocket_callback_echoback(
     default:
       break;
   }
+
+  return true;
 }
 
-void websocket_receive_callback(
-  const int        client_sock,
-  PWebSocketEntity entity,
-  const size_t     buffer_capacity,
-  char*            response_buffer)
+bool websocket_receive_callback(
+  const int              client_sock,
+  const WebSocketEntity* entity,
+  const size_t           buffer_capacity,
+  char*                  response_buffer)
 {
-  websocket_callback_echoback(client_sock, entity, buffer_capacity, response_buffer);
+  return websocket_callback_echoback(client_sock, entity, buffer_capacity, response_buffer);
 }
 
 void websocket_connect_callback(int client_sock)

@@ -8,7 +8,7 @@
 #include "../../util/allocator.h"
 #include "../websocket_local.h"
 
-size_t to_websocket_packet(PWebSocketEntity restrict entity, const size_t capacity, char* restrict raw)
+size_t to_websocket_packet(const WebSocketEntity* restrict entity, const size_t capacity, char* restrict raw)
 {
   require_not_null(entity, 0);
   require_not_null(raw, 0);
@@ -37,35 +37,36 @@ size_t to_websocket_packet(PWebSocketEntity restrict entity, const size_t capaci
   // |S|             |
   // |K|             |
   // +-+-------------+
-  unsigned char mask = (entity->mask ? 0x80 : 0x00);
+  unsigned char mask            = (entity->mask ? 0x80 : 0x00);
+  uint64_t      ext_payload_len = entity->ext_payload_len;
 
-  if (entity->ext_payload_len <= 125 && !entity->mask) {
-    raw[offset] = entity->ext_payload_len & 0x7F;
+  if (ext_payload_len <= 125 && !entity->mask) {
+    raw[offset] = ext_payload_len & 0x7F;
     offset++;
-    websocket_memcpy(&raw[offset], entity->payload, entity->ext_payload_len);
-    return offset + entity->ext_payload_len;
+    websocket_memcpy(&raw[offset], entity->payload, ext_payload_len);
+    return offset + ext_payload_len;
   }
 
-  if (entity->ext_payload_len > 125 && entity->ext_payload_len <= 0xFFFF) {
+  if (ext_payload_len > 125 && ext_payload_len <= 0xFFFF) {
     raw[offset] = mask | 126;  // Mask set + payload length 126
     offset++;
     if (capacity < offset + 2) {
       return 0;
     }
-    raw[offset]     = (entity->ext_payload_len >> 8) & 0xFF;
-    raw[offset + 1] = entity->ext_payload_len & 0xFF;
+    raw[offset]     = (ext_payload_len >> 8) & 0xFF;
+    raw[offset + 1] = ext_payload_len & 0xFF;
     offset += 2;
-  } else if (entity->ext_payload_len > 0xFFFF) {
+  } else if (ext_payload_len > 0xFFFF) {
     raw[offset] = mask | 127;  // Mask set + payload length 127
     offset++;
     require(capacity >= offset + 8, 0);
     for (int32_t i = 7; i >= 0; i--) {
-      raw[offset + i] = entity->ext_payload_len & 0xFF;
-      entity->ext_payload_len >>= 8;
+      raw[offset + i] = ext_payload_len & 0xFF;
+      ext_payload_len >>= 8;
     }
     offset += 8;
   } else {
-    raw[offset] = mask | entity->ext_payload_len;
+    raw[offset] = mask | ext_payload_len;
     offset++;
   }
 
@@ -77,25 +78,25 @@ size_t to_websocket_packet(PWebSocketEntity restrict entity, const size_t capaci
   }
 
   // Payload data
-  require(capacity >= offset + entity->ext_payload_len, 0);
+  require(capacity >= offset + ext_payload_len, 0);
 
   if (entity->mask) {
     // use loop unroll
     size_t i = 0;
-    for (; i + 4 <= entity->ext_payload_len; i += 4) {
+    for (; i + 4 <= ext_payload_len; i += 4) {
       raw[offset + i + 0] = entity->payload[i + 0] ^ entity->masking_key[0];
       raw[offset + i + 1] = entity->payload[i + 1] ^ entity->masking_key[1];
       raw[offset + i + 2] = entity->payload[i + 2] ^ entity->masking_key[2];
       raw[offset + i + 3] = entity->payload[i + 3] ^ entity->masking_key[3];
     }
-    for (; i < entity->ext_payload_len; i++) {
+    for (; i < ext_payload_len; i++) {
       raw[offset + i] = entity->payload[i] ^ entity->masking_key[i % 4];
     }
   } else {
-    websocket_memcpy(&raw[offset], &entity->payload[0], entity->ext_payload_len);
+    websocket_memcpy(&raw[offset], &entity->payload[0], ext_payload_len);
   }
 
-  offset += entity->ext_payload_len;
+  offset += ext_payload_len;
 
   return offset;
 }

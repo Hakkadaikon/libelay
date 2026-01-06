@@ -1,6 +1,6 @@
 #include "websocket_local.h"
 
-bool websocket_packet_dump(PWebSocketEntity restrict entity)
+bool websocket_packet_dump(const WebSocketEntity* restrict entity)
 {
   require_not_null(entity, false);
 

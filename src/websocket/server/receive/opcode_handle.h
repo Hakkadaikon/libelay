@@ -5,10 +5,10 @@
 #include "../../websocket_local.h"
 
 static inline int32_t opcode_handle(
-  const int32_t       client_sock,
-  PWebSocketRawBuffer buffer,
-  PWebSocketCallbacks callbacks,
-  PWebSocketEntity    entity)
+  const int32_t          client_sock,
+  PWebSocketRawBuffer    buffer,
+  PWebSocketCallbacks    callbacks,
+  const WebSocketEntity* entity)
 {
   require_valid_length(client_sock, WEBSOCKET_ERRORCODE_FATAL_ERROR);
   require_not_null(buffer, WEBSOCKET_ERRORCODE_FATAL_ERROR);
@@ -28,10 +28,14 @@ static inline int32_t opcode_handle(
     case WEBSOCKET_OP_CODE_CLOSE:
       return WEBSOCKET_ERRORCODE_SOCKET_CLOSE_ERROR;
     case WEBSOCKET_OP_CODE_PING: {
-      entity->mask   = 0;
-      entity->opcode = WEBSOCKET_OP_CODE_PONG;
+      WebSocketEntity response_entity;
 
-      size_t packet_size = to_websocket_packet(entity, buffer->capacity, buffer->response);
+      websocket_memcpy(&response_entity, entity, sizeof(WebSocketEntity));
+
+      response_entity.mask   = 0;
+      response_entity.opcode = WEBSOCKET_OP_CODE_PONG;
+
+      size_t packet_size = to_websocket_packet(&response_entity, buffer->capacity, buffer->response);
       if (packet_size == 0) {
         log_error("Failed to create pong frame.\n");
         return WEBSOCKET_ERRORCODE_SOCKET_CLOSE_ERROR;
