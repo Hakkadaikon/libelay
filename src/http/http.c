@@ -8,6 +8,10 @@ static inline size_t extract_keyword(
   const char   token,
   char* restrict output)
 {
+  require_not_null(buffer, -1);
+  require_valid_length(buffer_size, -1);
+  require_not_null(output, -1);
+
   int32_t keyword_length = skip_token(buffer, buffer_size, token);
   if (keyword_length == -1) {
     return -1;
@@ -23,6 +27,10 @@ static inline bool extract_http_request_line(
   const size_t buffer_size,
   PHTTPRequestLine restrict line)
 {
+  require_not_null(buffer, false);
+  require_not_null(line, false);
+  require_valid_length(buffer_size, false);
+
   size_t  remain_buffer_size = buffer_size;
   int32_t keyword_length;
 
@@ -56,6 +64,10 @@ static inline bool extract_http_request_header_line(
   const size_t buffer_size,
   PHTTPRequestHeaderLine restrict line)
 {
+  require_not_null(buffer, false);
+  require_not_null(line, false);
+  require_valid_length(buffer_size, false);
+
   size_t  remain_buffer_size = buffer_size;
   int32_t keyword_length;
 
@@ -82,6 +94,10 @@ bool extract_http_request_header(
   size_t*               header_size,
   HTTPRequestHeaderLine lines[])
 {
+  require_not_null(buffer, false);
+  require_not_null(header_size, false);
+  require_valid_length(buffer_size, false);
+
   size_t buffer_pos         = 0;
   size_t header_pos         = 0;
   size_t remain_buffer_size = buffer_size;
@@ -119,12 +135,10 @@ bool extract_http_request(
   const size_t buffer_size,
   PHTTPRequest restrict request)
 {
-  if (
-    is_null(buffer) ||
-    is_null((char*)request->headers) ||
-    buffer_size <= 0) {
-    return false;
-  }
+  require_not_null(buffer, false);
+  require_not_null(request, false);
+  require_not_null(request->headers, false);
+  require_valid_length(buffer_size, false);
 
   size_t remain_buffer_size = buffer_size;
   if (!extract_http_request_line(buffer, remain_buffer_size, &request->line)) {
