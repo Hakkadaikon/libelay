@@ -5,11 +5,11 @@
 #include "accept_handle.h"
 
 static inline int32_t epoll_accept(
-  const PWebSocketEpollLoopArgs epoll_args,
+  const WebSocketEpollLoopArgs* epoll_args,
   const int32_t                 server_sock,
-  PWebSocketRawBuffer           buffer,
-  const PWebSocketEpollEvent    register_event,
-  PWebSocketCallbacks           callbacks)
+  WebSocketRawBuffer*           buffer,
+  WebSocketEpollEvent*          register_event,
+  const WebSocketCallbacks*     callbacks)
 {
   require_not_null(epoll_args, WEBSOCKET_ERRORCODE_FATAL_ERROR);
   require_not_null(epoll_args->event, WEBSOCKET_ERRORCODE_FATAL_ERROR);

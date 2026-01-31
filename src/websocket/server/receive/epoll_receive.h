@@ -6,9 +6,9 @@
 #include "receive_handle.h"
 
 static inline int32_t epoll_receive(
-  const PWebSocketEpollLoopArgs epoll_args,
-  PWebSocketRawBuffer           buffer,
-  PWebSocketCallbacks           callbacks)
+  const WebSocketEpollLoopArgs* epoll_args,
+  WebSocketRawBuffer*           buffer,
+  const WebSocketCallbacks*     callbacks)
 {
   require_not_null(epoll_args, WEBSOCKET_ERRORCODE_FATAL_ERROR);
   require_valid_length(epoll_args->epoll_fd, WEBSOCKET_ERRORCODE_FATAL_ERROR);

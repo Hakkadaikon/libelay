@@ -1,6 +1,6 @@
 #include "../websocket_local.h"
 
-int32_t websocket_server_init(const PWebSocketInitArgs args)
+int32_t websocket_server_init(const WebSocketInitArgs* args)
 {
   require_not_null(args, WEBSOCKET_ERRORCODE_FATAL_ERROR);
 

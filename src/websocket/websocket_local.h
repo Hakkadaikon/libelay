@@ -18,15 +18,15 @@
 typedef struct {
   int32_t              epoll_fd;
   uint8_t              dummy[4];
-  PWebSocketEpollEvent event;
-} WebSocketEpollLoopArgs, *PWebSocketEpollLoopArgs;
+  WebSocketEpollEvent* event;
+} WebSocketEpollLoopArgs;
 
 typedef struct {
   size_t  capacity;
   char*   request;
   char*   response;
   uint8_t dummy[6];
-} WebSocketRawBuffer, *PWebSocketRawBuffer;
+} WebSocketRawBuffer;
 
 typedef enum {
   WEBSOCKET_SYSCALL_ERROR = -1
@@ -40,9 +40,9 @@ bool is_valid_request(PHTTPRequest request);
 bool is_valid_request_header(PHTTPRequestHeaderLine headers, size_t header_size);
 bool is_valid_request_line(PHTTPRequestLine line);
 bool client_handshake(
-  const int32_t       client_sock,
-  PWebSocketRawBuffer buffer,
-  PHTTPRequest        request);
+  const int32_t             client_sock,
+  const WebSocketRawBuffer* buffer,
+  PHTTPRequest              request);
 
 /*----------------------------------------------------------------------------*/
 /* websocket/crypto.c                                                         */
@@ -66,13 +66,13 @@ int32_t websocket_listen(const int32_t port_num, const int32_t backlog);
 /* websocket/socket/epoll.c or websocket/socket/kqueue.c                      */
 /*----------------------------------------------------------------------------*/
 
-bool    websocket_epoll_add(const int32_t epoll_fd, const int32_t sock_fd, PWebSocketEpollEvent event);
+bool    websocket_epoll_add(const int32_t epoll_fd, const int32_t sock_fd, WebSocketEpollEvent* event);
 bool    websocket_epoll_del(const int32_t epoll_fd, const int32_t sock_fd);
 int32_t websocket_epoll_create();
-int32_t websocket_epoll_wait(const int32_t epoll_fd, PWebSocketEpollEvent events, const int32_t max_events);
-int32_t websocket_epoll_getfd(PWebSocketEpollEvent event);
-int32_t websocket_epoll_rise_error(PWebSocketEpollEvent event);
-int32_t websocket_epoll_rise_input(PWebSocketEpollEvent event);
+int32_t websocket_epoll_wait(const int32_t epoll_fd, WebSocketEpollEvent* events, const int32_t max_events);
+int32_t websocket_epoll_getfd(const WebSocketEpollEvent* event);
+int32_t websocket_epoll_rise_error(const WebSocketEpollEvent* event);
+int32_t websocket_epoll_rise_input(const WebSocketEpollEvent* event);
 
 /*----------------------------------------------------------------------------*/
 /* websocket/internal_log.c                                                   */

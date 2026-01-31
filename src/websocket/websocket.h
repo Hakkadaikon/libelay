@@ -83,7 +83,7 @@ typedef struct {
   PWebSocketReceiveCallback    receive_callback;     ///< @see PWebSocketReceiveCallback
   PWebSocketConnectCallback    connect_callback;     ///< @see PWebSocketConnectCallback
   PWebSocketDisconnectCallback disconnect_callback;  ///< @see PWebSocketDisconnectCallback
-} WebSocketCallbacks, *PWebSocketCallbacks;
+} WebSocketCallbacks;
 
 /**
  * @brief Arguments to pass to websocket_init()
@@ -91,7 +91,7 @@ typedef struct {
 typedef struct {
   int32_t port_num;  ///< WebSocket port number
   int32_t backlog;   ///< Listen queue size
-} WebSocketInitArgs, *PWebSocketInitArgs;
+} WebSocketInitArgs;
 
 /**
  * @brief Arguments to pass to websocket_loop()
@@ -101,7 +101,7 @@ typedef struct {
   int32_t            dummy;            ///< dummy
   size_t             buffer_capacity;  ///< Capacity of the send and receive buffer for one client.
   WebSocketCallbacks callbacks;        ///< @see WebSocketCallBacks
-} WebSocketLoopArgs, *PWebSocketLoopArgs;
+} WebSocketLoopArgs;
 
 /**
  * @brief Parse raw data in network byte order into a websocket flame structure
@@ -134,7 +134,7 @@ size_t to_websocket_packet(const WebSocketEntity* entity, const size_t capacity,
  * @return Positive value: Server socket descriptor / Negative value: WebSocket error code
  * @see WebSocketErrorCode
  */
-int32_t websocket_server_init(const PWebSocketInitArgs args);
+int32_t websocket_server_init(const WebSocketInitArgs* args);
 
 /**
  * @brief Wrapper for the BSD socket send() API.
@@ -178,6 +178,6 @@ int32_t websocket_close(const int32_t sock_fd);
  *
  * @return true: success / false: failure
  */
-bool websocket_server_loop(PWebSocketLoopArgs args);
+bool websocket_server_loop(const WebSocketLoopArgs* args);
 
 #endif

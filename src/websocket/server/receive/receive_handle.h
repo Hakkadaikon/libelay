@@ -6,10 +6,10 @@
 #include "opcode_handle.h"
 
 static inline int32_t receive_handle(
-  const int32_t       client_sock,
-  const size_t        read_size,
-  PWebSocketRawBuffer buffer,
-  PWebSocketCallbacks callbacks)
+  const int32_t             client_sock,
+  const size_t              read_size,
+  WebSocketRawBuffer*       buffer,
+  const WebSocketCallbacks* callbacks)
 {
   require_valid_length(client_sock, WEBSOCKET_ERRORCODE_FATAL_ERROR);
   require_valid_length(read_size, WEBSOCKET_ERRORCODE_FATAL_ERROR);
@@ -44,7 +44,7 @@ static inline int32_t receive_handle(
   }
 
 FINALIZE:
-  websocket_free(frame.payload);
+  websocket_free(entity.payload);
   return rtn;
 }
 

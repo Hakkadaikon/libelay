@@ -3,7 +3,7 @@
 #include "accept/epoll_accept.h"
 #include "receive/epoll_receive.h"
 
-bool websocket_server_loop(PWebSocketLoopArgs args)
+bool websocket_server_loop(const WebSocketLoopArgs* args)
 {
   require_not_null(args, false);
   require_valid_length(args->server_sock, false);

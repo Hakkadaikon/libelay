@@ -5,10 +5,10 @@
 #include "../../websocket_local.h"
 
 static inline int32_t opcode_handle(
-  const int32_t          client_sock,
-  PWebSocketRawBuffer    buffer,
-  PWebSocketCallbacks    callbacks,
-  const WebSocketEntity* entity)
+  const int32_t             client_sock,
+  WebSocketRawBuffer*       buffer,
+  const WebSocketCallbacks* callbacks,
+  const WebSocketEntity*    entity)
 {
   require_valid_length(client_sock, WEBSOCKET_ERRORCODE_FATAL_ERROR);
   require_not_null(buffer, WEBSOCKET_ERRORCODE_FATAL_ERROR);

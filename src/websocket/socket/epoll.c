@@ -5,7 +5,7 @@
 
 static int32_t get_epoll_wait_err(const int32_t num_of_event);
 
-bool websocket_epoll_add(const int32_t epoll_fd, const int32_t sock_fd, PWebSocketEpollEvent event)
+bool websocket_epoll_add(const int32_t epoll_fd, const int32_t sock_fd, WebSocketEpollEvent* event)
 {
   event->data.fd = sock_fd;
   event->events  = EPOLLIN | EPOLLHUP | EPOLLERR | EPOLLRDHUP | EPOLLET;
@@ -49,7 +49,7 @@ int32_t websocket_epoll_create()
   return epoll_fd;
 }
 
-int32_t websocket_epoll_wait(const int32_t epoll_fd, PWebSocketEpollEvent events, const int32_t max_events)
+int32_t websocket_epoll_wait(const int32_t epoll_fd, WebSocketEpollEvent* events, const int32_t max_events)
 {
   if (is_rise_signal()) {
     log_info("A signal was raised during epoll_wait(). The system will abort processing.\n");
@@ -80,12 +80,12 @@ static int32_t get_epoll_wait_err(const int32_t num_of_event)
   return WEBSOCKET_ERRORCODE_NONE;
 }
 
-int32_t websocket_epoll_getfd(PWebSocketEpollEvent event)
+int32_t websocket_epoll_getfd(const WebSocketEpollEvent* event)
 {
   return event->data.fd;
 }
 
-int32_t websocket_epoll_rise_error(PWebSocketEpollEvent event)
+int32_t websocket_epoll_rise_error(const WebSocketEpollEvent* event)
 {
   if (event->events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP)) {
     return WEBSOCKET_ERRORCODE_SOCKET_CLOSE_ERROR;
@@ -94,7 +94,7 @@ int32_t websocket_epoll_rise_error(PWebSocketEpollEvent event)
   return WEBSOCKET_ERRORCODE_NONE;
 }
 
-int32_t websocket_epoll_rise_input(PWebSocketEpollEvent event)
+int32_t websocket_epoll_rise_input(const WebSocketEpollEvent* event)
 {
   if (!(event->events & EPOLLIN)) {
     return WEBSOCKET_ERRORCODE_CONTINUABLE_ERROR;

@@ -5,11 +5,11 @@
 #include "../../websocket_local.h"
 
 static inline bool accept_handle(
-  const int32_t        epoll_fd,
-  const int32_t        server_sock,
-  PWebSocketRawBuffer  buffer,
-  PWebSocketEpollEvent event,
-  PWebSocketCallbacks  callbacks)
+  const int32_t             epoll_fd,
+  const int32_t             server_sock,
+  const WebSocketRawBuffer* buffer,
+  WebSocketEpollEvent*      event,
+  const WebSocketCallbacks* callbacks)
 {
   require_valid_length(epoll_fd, false);
   require_valid_length(server_sock, false);
@@ -33,13 +33,13 @@ static inline bool accept_handle(
     goto FINALIZE;
   }
 
-  log_debug("epoll add(client sock)...\n");
+  log_debug("epoll add(client sock)...");
   if (!websocket_epoll_add(epoll_fd, client_sock, event)) {
     err = true;
     goto FINALIZE;
   }
 
-  log_debug("Read to message...\n");
+  log_debug("Read to message...");
   while (1) {
     bytes_read = websocket_recv(client_sock, buffer->capacity, buffer->request);
     if (bytes_read < 0) {

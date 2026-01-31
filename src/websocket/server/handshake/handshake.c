@@ -10,8 +10,8 @@ static bool  build_handshake_packet(
    const size_t capacity);
 
 bool client_handshake(
-  const int32_t       client_sock,
-  PWebSocketRawBuffer buffer,
+  const int32_t             client_sock,
+  const WebSocketRawBuffer* buffer,
   PHTTPRequest restrict request)
 {
   bool has_error = false;
