@@ -27,6 +27,12 @@ add_executable(
    ../src/crypto/sha1.c
 )
 
+add_executable(
+  db-test
+  nostr/db/db_tags_test.cpp
+  ../src/nostr/db/db_tags.c
+)
+
 target_include_directories(
   websocket-test PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/../src
@@ -37,4 +43,15 @@ target_link_libraries(
   GTest::gtest_main
 )
 
+target_include_directories(
+  db-test PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/../src
+)
+
+target_link_libraries(
+  db-test
+  GTest::gtest_main
+)
+
 gtest_discover_tests(websocket-test)
+gtest_discover_tests(db-test)
