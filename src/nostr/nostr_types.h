@@ -43,4 +43,17 @@ typedef struct {
   size_t   limit;
 } NostrReqEntity, *PNostrReqEntity;
 
+/**
+ * @brief NIP-11 relay information document structure
+ */
+typedef struct {
+  const char* name;            ///< Relay name (recommended < 30 chars)
+  const char* description;     ///< Relay description
+  const char* pubkey;          ///< Admin pubkey (32-byte hex)
+  const char* contact;         ///< Contact URI (e.g., mailto:, nostr:)
+  const char* software;        ///< URL to relay software project
+  const char* version;         ///< Software version
+  const int*  supported_nips;  ///< Array of supported NIP numbers (NULL-terminated with -1)
+} NostrRelayInfo, *PNostrRelayInfo;
+
 #endif

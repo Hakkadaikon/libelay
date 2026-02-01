@@ -6,6 +6,7 @@
  * @brief Parses each parameter of a websocket packet stored in network byte order.
  * @see RFC6455 (https://datatracker.ietf.org/doc/html/rfc6455)
  */
+#include "../http/http.h"
 #include "../util/types.h"
 
 /**
@@ -77,12 +78,31 @@ typedef void (*PWebSocketDisconnectCallback)(
 );
 
 /**
+ * @brief User callback for HTTP requests during handshake phase.
+ *
+ * This callback is invoked before WebSocket upgrade to handle special HTTP requests
+ * such as NIP-11 relay information requests (Accept: application/nostr+json).
+ *
+ * @param[in]  request          Parsed HTTP request
+ * @param[in]  buffer_capacity  Response buffer capacity
+ * @param[out] response_buffer  Buffer for HTTP response body (no HTTP headers needed)
+ *
+ * @return true: Callback handled the request (response_buffer contains response body)
+ *         false: Not handled, proceed with WebSocket handshake
+ */
+typedef bool (*PWebSocketHandshakeCallback)(
+  const PHTTPRequest request,
+  const size_t       buffer_capacity,
+  char*              response_buffer);
+
+/**
  * @brief User callback list to pass to the WebSocket library.
  */
 typedef struct {
   PWebSocketReceiveCallback    receive_callback;     ///< @see PWebSocketReceiveCallback
   PWebSocketConnectCallback    connect_callback;     ///< @see PWebSocketConnectCallback
   PWebSocketDisconnectCallback disconnect_callback;  ///< @see PWebSocketDisconnectCallback
+  PWebSocketHandshakeCallback  handshake_callback;   ///< @see PWebSocketHandshakeCallback
 } WebSocketCallbacks;
 
 /**

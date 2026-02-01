@@ -104,3 +104,27 @@ static bool is_valid_websocket_key(const char* restrict value)
 
   return true;
 }
+
+/**
+ * @brief Check if this is a NIP-11 relay information request
+ *
+ * NIP-11 requests have Accept: application/nostr+json header
+ *
+ * @param[in] headers     HTTP request headers
+ * @param[in] header_size Number of headers
+ *
+ * @return true if Accept: application/nostr+json is present
+ */
+bool is_nip11_request(PHTTPRequestHeaderLine restrict headers, size_t header_size)
+{
+  for (size_t i = 0; i < header_size; i++) {
+    PHTTPRequestHeaderLine line = &headers[i];
+    if (IS_VALID_KEY(line->key, "accept")) {
+      if (strncmp_sensitive(line->value, "application/nostr+json", HTTP_HEADER_VALUE_CAPACITY, 22, false)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}

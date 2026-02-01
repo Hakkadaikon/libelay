@@ -62,10 +62,19 @@ static inline bool accept_handle(
     goto FINALIZE;
   }
 
-  if (!client_handshake(client_sock, buffer, &request)) {
+  HandshakeResult handshake_result = client_handshake(client_sock, buffer, &request, callbacks);
+  if (handshake_result == HANDSHAKE_RESULT_ERROR) {
     websocket_epoll_del(epoll_fd, client_sock);
     err = true;
     goto FINALIZE;
+  }
+
+  if (handshake_result == HANDSHAKE_RESULT_NIP11) {
+    // NIP-11 request was handled, close connection (not an error)
+    websocket_epoll_del(epoll_fd, client_sock);
+    websocket_close(client_sock);
+    log_debug("NIP-11 request completed, connection closed\n");
+    return true;
   }
 
 FINALIZE:

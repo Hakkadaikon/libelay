@@ -36,13 +36,24 @@ typedef enum {
 /* websocket/server/handshake                                                 */
 /*----------------------------------------------------------------------------*/
 
-bool is_valid_request(PHTTPRequest request);
-bool is_valid_request_header(PHTTPRequestHeaderLine headers, size_t header_size);
-bool is_valid_request_line(PHTTPRequestLine line);
-bool client_handshake(
+/**
+ * @brief Handshake result codes
+ */
+typedef enum {
+  HANDSHAKE_RESULT_WEBSOCKET = 1,  ///< WebSocket upgrade successful
+  HANDSHAKE_RESULT_NIP11     = 0,  ///< NIP-11 request handled (close connection)
+  HANDSHAKE_RESULT_ERROR     = -1  ///< Error occurred
+} HandshakeResult;
+
+bool            is_valid_request(PHTTPRequest request);
+bool            is_valid_request_header(PHTTPRequestHeaderLine headers, size_t header_size);
+bool            is_valid_request_line(PHTTPRequestLine line);
+bool            is_nip11_request(PHTTPRequestHeaderLine headers, size_t header_size);
+HandshakeResult client_handshake(
   const int32_t             client_sock,
   const WebSocketRawBuffer* buffer,
-  PHTTPRequest              request);
+  PHTTPRequest              request,
+  const WebSocketCallbacks* callbacks);
 
 /*----------------------------------------------------------------------------*/
 /* websocket/crypto.c                                                         */
