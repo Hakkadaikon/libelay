@@ -76,4 +76,5 @@ native/lib
 native/obj
 
 !CMakeLists.txt
+!requirement.txt
 !.gitignore
