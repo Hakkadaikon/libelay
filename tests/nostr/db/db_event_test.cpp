@@ -2,11 +2,11 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <cstring>
 #include <cstdlib>
-#include <unistd.h>
-#include <sys/stat.h>
+#include <cstring>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 // Use smaller sizes for testing to avoid stack overflow
 #define NOSTR_EVENT_TAG_VALUE_COUNT 16
@@ -29,7 +29,7 @@ typedef struct {
   char           dummy2[7];
   uint32_t       kind;
   uint32_t       tag_count;
-  int64_t        created_at;  // time_t
+  int64_t        created_at;
   NostrTagEntity tags[NOSTR_EVENT_TAG_LENGTH];
   char           content[NOSTR_EVENT_CONTENT_LENGTH];
   char           sig[129];
@@ -39,19 +39,19 @@ typedef struct {
 typedef struct NostrDB NostrDB;
 
 typedef enum {
-  NOSTR_DB_OK = 0,
-  NOSTR_DB_ERROR_FILE_OPEN = -1,
-  NOSTR_DB_ERROR_FILE_CREATE = -2,
-  NOSTR_DB_ERROR_MMAP_FAILED = -3,
-  NOSTR_DB_ERROR_INVALID_MAGIC = -4,
+  NOSTR_DB_OK                     = 0,
+  NOSTR_DB_ERROR_FILE_OPEN        = -1,
+  NOSTR_DB_ERROR_FILE_CREATE      = -2,
+  NOSTR_DB_ERROR_MMAP_FAILED      = -3,
+  NOSTR_DB_ERROR_INVALID_MAGIC    = -4,
   NOSTR_DB_ERROR_VERSION_MISMATCH = -5,
-  NOSTR_DB_ERROR_FULL = -6,
-  NOSTR_DB_ERROR_NOT_FOUND = -7,
-  NOSTR_DB_ERROR_DUPLICATE = -8,
-  NOSTR_DB_ERROR_INVALID_EVENT = -9,
-  NOSTR_DB_ERROR_INDEX_CORRUPT = -10,
-  NOSTR_DB_ERROR_NULL_PARAM = -11,
-  NOSTR_DB_ERROR_FSTAT_FAILED = -12,
+  NOSTR_DB_ERROR_FULL             = -6,
+  NOSTR_DB_ERROR_NOT_FOUND        = -7,
+  NOSTR_DB_ERROR_DUPLICATE        = -8,
+  NOSTR_DB_ERROR_INVALID_EVENT    = -9,
+  NOSTR_DB_ERROR_INDEX_CORRUPT    = -10,
+  NOSTR_DB_ERROR_NULL_PARAM       = -11,
+  NOSTR_DB_ERROR_FSTAT_FAILED     = -12,
   NOSTR_DB_ERROR_FTRUNCATE_FAILED = -13,
 } NostrDBError;
 
@@ -68,18 +68,20 @@ typedef struct {
 
 // DB functions
 NostrDBError nostr_db_init(NostrDB** db, const char* data_dir);
-void nostr_db_shutdown(NostrDB* db);
+void         nostr_db_shutdown(NostrDB* db);
 NostrDBError nostr_db_write_event(NostrDB* db, const NostrEventEntity* event);
-NostrDBError nostr_db_get_event_by_id(NostrDB* db, const uint8_t* id, NostrEventEntity* out);
+NostrDBError nostr_db_get_event_by_id(NostrDB* db, const uint8_t* id,
+                                      NostrEventEntity* out);
 NostrDBError nostr_db_delete_event(NostrDB* db, const uint8_t* id);
 NostrDBError nostr_db_get_stats(NostrDB* db, NostrDBStats* stats);
 
 }  // extern "C"
 
 class NostrDBEventTest : public ::testing::Test {
-protected:
+ protected:
   void SetUp() override {
-    snprintf(test_dir, sizeof(test_dir), "/tmp/nostr_db_event_test_%d", getpid());
+    snprintf(test_dir, sizeof(test_dir), "/tmp/nostr_db_event_test_%d",
+             getpid());
     mkdir(test_dir, 0755);
     db = nullptr;
     NostrDBError err = nostr_db_init(&db, test_dir);
@@ -101,7 +103,7 @@ protected:
     }
 
     struct dirent* entry;
-    char filepath[512];
+    char           filepath[512];
 
     while ((entry = readdir(dir)) != nullptr) {
       if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
@@ -116,27 +118,25 @@ protected:
   }
 
   NostrEventEntity* allocate_event() {
-    NostrEventEntity* event = (NostrEventEntity*)malloc(sizeof(NostrEventEntity));
+    NostrEventEntity* event =
+        (NostrEventEntity*)malloc(sizeof(NostrEventEntity));
     EXPECT_NE(event, nullptr);
     memset(event, 0, sizeof(NostrEventEntity));
     return event;
   }
 
-  void free_event(NostrEventEntity* event) {
-    free(event);
-  }
+  void free_event(NostrEventEntity* event) { free(event); }
 
   void create_sample_event(NostrEventEntity* event) {
     memset(event, 0, sizeof(NostrEventEntity));
-    // Valid 64-char hex ID (all zeros for simplicity)
-    strcpy(event->id, "0000000000000000000000000000000000000000000000000000000000000001");
-    // Valid 64-char hex pubkey
-    strcpy(event->pubkey, "0000000000000000000000000000000000000000000000000000000000000002");
-    // Valid 128-char hex sig
+    strcpy(event->id,
+           "0000000000000000000000000000000000000000000000000000000000000001");
+    strcpy(event->pubkey,
+           "0000000000000000000000000000000000000000000000000000000000000002");
     memset(event->sig, '0', 128);
-    event->sig[128] = '\0';
-    event->kind = 1;
-    event->created_at = 1704067200;  // Some timestamp
+    event->sig[128]   = '\0';
+    event->kind       = 1;
+    event->created_at = 1704067200;
     strcpy(event->content, "Hello, Nostr!");
     event->tag_count = 0;
   }
@@ -149,7 +149,7 @@ protected:
     }
   }
 
-  char test_dir[256];
+  char     test_dir[256];
   NostrDB* db;
 };
 
@@ -200,8 +200,10 @@ TEST_F(NostrDBEventTest, WriteMultipleEvents) {
   for (int i = 0; i < 5; i++) {
     create_sample_event(event);
     // Make each ID unique
-    snprintf(event->id, sizeof(event->id),
-             "00000000000000000000000000000000000000000000000000000000000000%02x", i);
+    snprintf(
+        event->id, sizeof(event->id),
+        "00000000000000000000000000000000000000000000000000000000000000%02x",
+        i);
     snprintf(event->content, sizeof(event->content), "Event %d", i);
 
     NostrDBError err = nostr_db_write_event(db, event);
@@ -219,7 +221,7 @@ TEST_F(NostrDBEventTest, GetNonExistentEventReturnsNotFound) {
   uint8_t fake_id[32] = {0xFF};
 
   NostrEventEntity* out = allocate_event();
-  NostrDBError err = nostr_db_get_event_by_id(db, fake_id, out);
+  NostrDBError      err = nostr_db_get_event_by_id(db, fake_id, out);
   EXPECT_EQ(err, NOSTR_DB_ERROR_NOT_FOUND);
 
   free_event(out);
@@ -282,11 +284,13 @@ TEST_F(NostrDBEventTest, WriteEventWithTags) {
 
   // Add tags
   strcpy(event->tags[0].key, "e");
-  strcpy(event->tags[0].values[0], "0000000000000000000000000000000000000000000000000000000000000003");
+  strcpy(event->tags[0].values[0],
+         "0000000000000000000000000000000000000000000000000000000000000003");
   event->tags[0].item_count = 1;
 
   strcpy(event->tags[1].key, "p");
-  strcpy(event->tags[1].values[0], "0000000000000000000000000000000000000000000000000000000000000004");
+  strcpy(event->tags[1].values[0],
+         "0000000000000000000000000000000000000000000000000000000000000004");
   strcpy(event->tags[1].values[1], "wss://relay.example.com");
   event->tags[1].item_count = 2;
 
