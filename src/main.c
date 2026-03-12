@@ -207,21 +207,20 @@ static bool handle_req_message(int32_t client_sock, const NostrReqMessage* req)
   // Query database for matching events
   if (g_db_initialized && g_db != NULL) {
     for (size_t filter_idx = 0; filter_idx < req->filters_count; filter_idx++) {
-      NostrDBFilter    db_filter;
-      NostrDBResultSet result = {0};
-
+      NostrDBFilter db_filter;
       convert_filter_to_db_filter(&req->filters[filter_idx], &db_filter);
 
-      NostrDBError err = nostr_db_query_execute(g_db, &db_filter, &result);
-      if (err == NOSTR_DB_OK && result.count > 0) {
+      NostrDBResultSet* result = nostr_db_result_create(0);
+      if (is_null(result)) continue;
+
+      NostrDBError err = nostr_db_query_execute(g_db, &db_filter, result);
+      if (err == NOSTR_DB_OK && result->count > 0) {
         // Allocate event on heap to avoid stack overflow
         NostrEventEntity* event = (NostrEventEntity*)internal_mmap(
           NULL, sizeof(NostrEventEntity), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         if (event != MAP_FAILED) {
-          // Send matching events
-          for (uint32_t i = 0; i < result.count; i++) {
-            if (nostr_db_get_event_at_offset(g_db, result.offsets[i], event) == NOSTR_DB_OK) {
-              // Generate and send EVENT response
+          for (uint32_t i = 0; i < result->count; i++) {
+            if (nostr_db_get_event_at_offset(g_db, result->offsets[i], event) == NOSTR_DB_OK) {
               if (nostr_response_event(req->subscription_id, event, g_response_buffer, RESPONSE_BUFFER_SIZE)) {
                 size_t len = strlen(g_response_buffer);
                 send_websocket_message(client_sock, g_response_buffer, len);
@@ -232,7 +231,7 @@ static bool handle_req_message(int32_t client_sock, const NostrReqMessage* req)
         }
       }
 
-      nostr_db_result_free(&result);
+      nostr_db_result_free(result);
     }
   }
 
