@@ -34,21 +34,37 @@ add_executable(
   nostr/db/db_mmap_test.cpp
   nostr/db/db_init_test.cpp
   nostr/db/db_event_test.cpp
-  nostr/db/db_index_test.cpp
-  nostr/db/db_query_test.cpp
   ../src/nostr/db/db_tags.c
   ../src/nostr/db/db_file.c
   ../src/nostr/db/db_mmap.c
   ../src/nostr/db/db_init.c
   ../src/nostr/db/db_event.c
-  ../src/nostr/db/index/db_index_id.c
-  ../src/nostr/db/index/db_index_timeline.c
-  ../src/nostr/db/index/db_index_kind.c
-  ../src/nostr/db/index/db_index_pubkey.c
-  ../src/nostr/db/index/db_index_pubkey_kind.c
-  ../src/nostr/db/index/db_index_tag.c
-  ../src/nostr/db/query/db_query.c
-  ../src/nostr/db/query/db_query_result.c
+  ../src/nostr/db/record/slot_page.c
+  ../src/nostr/db/record/record_manager.c
+  ../src/nostr/db/record/overflow.c
+  ../src/nostr/db/record/event_serializer.c
+  ../src/nostr/db/index/index_manager.c
+  ../src/nostr/db/index/index_id.c
+  ../src/nostr/db/index/index_timeline.c
+  ../src/nostr/db/index/index_pubkey.c
+  ../src/nostr/db/index/index_kind.c
+  ../src/nostr/db/index/index_pubkey_kind.c
+  ../src/nostr/db/index/index_tag.c
+  ../src/nostr/db/btree/btree_node.c
+  ../src/nostr/db/btree/btree_search.c
+  ../src/nostr/db/btree/btree_insert.c
+  ../src/nostr/db/btree/btree_delete.c
+  ../src/nostr/db/btree/btree_overflow.c
+  ../src/nostr/db/btree/btree_compare.c
+  ../src/nostr/db/buffer/buffer_pool.c
+  ../src/nostr/db/disk/disk_manager.c
+  ../src/nostr/db/disk/disk_io.c
+  ../src/nostr/db/disk/disk_alloc.c
+  ../src/nostr/db/wal/wal_manager.c
+  ../src/nostr/db/wal/wal_write.c
+  ../src/nostr/db/wal/wal_flush.c
+  ../src/nostr/db/wal/wal_recovery.c
+  ../src/nostr/db/wal/wal_checkpoint.c
   ../src/util/log.c
   ../src/arch/linux/x86_64/asm_syscall.S
 )
