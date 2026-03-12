@@ -146,8 +146,138 @@ target_link_libraries(
   GTest::gtest_main
 )
 
+add_executable(
+  disk-test
+  nostr/db/disk/disk_test.cpp
+  ../src/nostr/db/disk/disk_manager.c
+  ../src/nostr/db/disk/disk_io.c
+  ../src/nostr/db/disk/disk_alloc.c
+  ../src/nostr/db/db_file.c
+  ../src/util/log.c
+  ../src/arch/linux/x86_64/asm_syscall.S
+)
+
+target_include_directories(
+  disk-test PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/../src
+)
+
+target_link_libraries(
+  disk-test
+  GTest::gtest_main
+)
+
+add_executable(
+  buffer-test
+  nostr/db/buffer/buffer_test.cpp
+  ../src/nostr/db/buffer/buffer_pool.c
+  ../src/nostr/db/disk/disk_manager.c
+  ../src/nostr/db/disk/disk_io.c
+  ../src/nostr/db/disk/disk_alloc.c
+  ../src/nostr/db/db_file.c
+  ../src/util/log.c
+  ../src/arch/linux/x86_64/asm_syscall.S
+)
+
+target_include_directories(
+  buffer-test PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/../src
+)
+
+target_link_libraries(
+  buffer-test
+  GTest::gtest_main
+)
+
+add_executable(
+  wal-test
+  nostr/db/wal/wal_test.cpp
+  ../src/nostr/db/wal/wal_manager.c
+  ../src/nostr/db/wal/wal_write.c
+  ../src/nostr/db/wal/wal_flush.c
+  ../src/nostr/db/wal/wal_recovery.c
+  ../src/nostr/db/wal/wal_checkpoint.c
+  ../src/nostr/db/buffer/buffer_pool.c
+  ../src/nostr/db/disk/disk_manager.c
+  ../src/nostr/db/disk/disk_io.c
+  ../src/nostr/db/disk/disk_alloc.c
+  ../src/nostr/db/db_file.c
+  ../src/util/log.c
+  ../src/arch/linux/x86_64/asm_syscall.S
+)
+
+target_include_directories(
+  wal-test PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/../src
+)
+
+target_link_libraries(
+  wal-test
+  GTest::gtest_main
+)
+
+add_executable(
+  record-test
+  nostr/db/record/record_test.cpp
+  ../src/nostr/db/record/slot_page.c
+  ../src/nostr/db/record/record_manager.c
+  ../src/nostr/db/record/overflow.c
+  ../src/nostr/db/record/event_serializer.c
+  ../src/nostr/db/db_tags.c
+  ../src/nostr/db/buffer/buffer_pool.c
+  ../src/nostr/db/disk/disk_manager.c
+  ../src/nostr/db/disk/disk_io.c
+  ../src/nostr/db/disk/disk_alloc.c
+  ../src/nostr/db/db_file.c
+  ../src/util/log.c
+  ../src/arch/linux/x86_64/asm_syscall.S
+)
+
+target_include_directories(
+  record-test PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/../src
+)
+
+target_link_libraries(
+  record-test
+  GTest::gtest_main
+)
+
+add_executable(
+  btree-test
+  nostr/db/btree/btree_test.cpp
+  ../src/nostr/db/btree/btree_node.c
+  ../src/nostr/db/btree/btree_search.c
+  ../src/nostr/db/btree/btree_insert.c
+  ../src/nostr/db/btree/btree_delete.c
+  ../src/nostr/db/btree/btree_overflow.c
+  ../src/nostr/db/btree/btree_compare.c
+  ../src/nostr/db/buffer/buffer_pool.c
+  ../src/nostr/db/disk/disk_manager.c
+  ../src/nostr/db/disk/disk_io.c
+  ../src/nostr/db/disk/disk_alloc.c
+  ../src/nostr/db/db_file.c
+  ../src/util/log.c
+  ../src/arch/linux/x86_64/asm_syscall.S
+)
+
+target_include_directories(
+  btree-test PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/../src
+)
+
+target_link_libraries(
+  btree-test
+  GTest::gtest_main
+)
+
 gtest_discover_tests(websocket-test)
 gtest_discover_tests(db-test)
 gtest_discover_tests(event-test)
 gtest_discover_tests(subscription-test)
 gtest_discover_tests(response-test)
+gtest_discover_tests(disk-test)
+gtest_discover_tests(buffer-test)
+gtest_discover_tests(wal-test)
+gtest_discover_tests(record-test)
+gtest_discover_tests(btree-test)
