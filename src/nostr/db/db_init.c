@@ -94,7 +94,7 @@ static NostrDBError write_meta_page(NostrDB* db)
     return NOSTR_DB_ERROR_MMAP_FAILED;
   }
 
-  DBMetaPage* meta = (DBMetaPage*)page->data;
+  DBMetaPage* meta    = (DBMetaPage*)page->data;
   meta->event_count   = db->event_count;
   meta->deleted_count = db->deleted_count;
 

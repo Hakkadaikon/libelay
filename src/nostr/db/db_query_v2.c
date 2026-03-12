@@ -205,7 +205,7 @@ NostrDBError nostr_db_query_execute(NostrDB* db, const NostrDBFilter* filter,
   if (is_null(rs)) return NOSTR_DB_ERROR_MMAP_FAILED;
 
   NostrDBError err =
-      query_execute(&db->indexes, &db->buffer_pool, filter, rs);
+    query_execute(&db->indexes, &db->buffer_pool, filter, rs);
   if (err != NOSTR_DB_OK) {
     query_result_free(rs);
     return err;

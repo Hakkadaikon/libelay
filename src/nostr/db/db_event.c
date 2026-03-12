@@ -21,14 +21,14 @@ NostrDBError nostr_db_write_event(NostrDB* db, const NostrEventEntity* event)
   }
 
   // Insert record into storage
-  RecordId rid;
+  RecordId     rid;
   NostrDBError err = record_insert(&db->buffer_pool, buf, (uint16_t)size, &rid);
   if (err != NOSTR_DB_OK) {
     return err;
   }
 
   // Get EventRecord header and tag data for index insertion
-  EventRecord* rec = (EventRecord*)buf;
+  EventRecord*   rec         = (EventRecord*)buf;
   const uint8_t* tags_data   = buf + sizeof(EventRecord) + rec->content_length;
   uint16_t       tags_length = rec->tags_length;
 
@@ -56,7 +56,7 @@ NostrDBError nostr_db_get_event_by_id(NostrDB* db, const uint8_t* id,
   require_not_null(out, NOSTR_DB_ERROR_NULL_PARAM);
 
   // Lookup RecordId via ID index
-  RecordId rid;
+  RecordId     rid;
   NostrDBError err = index_id_lookup(&db->indexes.id_index, id, &rid);
   if (err != NOSTR_DB_OK) {
     return NOSTR_DB_ERROR_NOT_FOUND;
@@ -65,7 +65,7 @@ NostrDBError nostr_db_get_event_by_id(NostrDB* db, const uint8_t* id,
   // Read record data
   uint8_t  buf[8192];
   uint16_t length = sizeof(buf);
-  err = record_read(&db->buffer_pool, rid, buf, &length);
+  err             = record_read(&db->buffer_pool, rid, buf, &length);
   if (err != NOSTR_DB_OK) {
     return err;
   }
@@ -83,7 +83,7 @@ NostrDBError nostr_db_get_event_by_id(NostrDB* db, const uint8_t* id,
 // ============================================================================
 // nostr_db_get_event_at_offset
 // ============================================================================
-NostrDBError nostr_db_get_event_at_offset(NostrDB* db,
+NostrDBError nostr_db_get_event_at_offset(NostrDB*          db,
                                           nostr_db_offset_t offset,
                                           NostrEventEntity* out)
 {
@@ -100,9 +100,9 @@ NostrDBError nostr_db_get_event_at_offset(NostrDB* db,
   }
 
   // Read record data
-  uint8_t  buf[8192];
-  uint16_t length = sizeof(buf);
-  NostrDBError err = record_read(&db->buffer_pool, rid, buf, &length);
+  uint8_t      buf[8192];
+  uint16_t     length = sizeof(buf);
+  NostrDBError err    = record_read(&db->buffer_pool, rid, buf, &length);
   if (err != NOSTR_DB_OK) {
     return NOSTR_DB_ERROR_NOT_FOUND;
   }
@@ -125,7 +125,7 @@ NostrDBError nostr_db_delete_event(NostrDB* db, const uint8_t* id)
   require_not_null(id, NOSTR_DB_ERROR_NULL_PARAM);
 
   // Lookup RecordId via ID index
-  RecordId rid;
+  RecordId     rid;
   NostrDBError err = index_id_lookup(&db->indexes.id_index, id, &rid);
   if (err != NOSTR_DB_OK) {
     return NOSTR_DB_ERROR_NOT_FOUND;
@@ -134,7 +134,7 @@ NostrDBError nostr_db_delete_event(NostrDB* db, const uint8_t* id)
   // Read the record to get data needed for index deletion
   uint8_t  buf[8192];
   uint16_t length = sizeof(buf);
-  err = record_read(&db->buffer_pool, rid, buf, &length);
+  err             = record_read(&db->buffer_pool, rid, buf, &length);
   if (err != NOSTR_DB_OK) {
     return err;
   }
