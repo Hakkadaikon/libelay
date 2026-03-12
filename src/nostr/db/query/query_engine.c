@@ -378,6 +378,35 @@ NostrDBError query_post_filter(BufferPool* pool, QueryResultSet* rs,
 }
 
 // ============================================================================
+// Internal: Validate filter for query execution
+// ============================================================================
+static bool filter_validate(const NostrDBFilter* filter)
+{
+  if (is_null(filter)) return false;
+  if (filter->ids_count > NOSTR_DB_FILTER_MAX_IDS) return false;
+  if (filter->authors_count > NOSTR_DB_FILTER_MAX_AUTHORS) return false;
+  if (filter->kinds_count > NOSTR_DB_FILTER_MAX_KINDS) return false;
+  if (filter->tags_count > NOSTR_DB_FILTER_MAX_TAGS) return false;
+  if (filter->since > 0 && filter->until > 0 && filter->since > filter->until)
+    return false;
+  return true;
+}
+
+// ============================================================================
+// Internal: Select optimal query strategy
+// ============================================================================
+static NostrDBQueryStrategy select_strategy(const NostrDBFilter* filter)
+{
+  if (filter->ids_count > 0) return NOSTR_DB_QUERY_STRATEGY_BY_ID;
+  if (filter->tags_count > 0) return NOSTR_DB_QUERY_STRATEGY_BY_TAG;
+  if (filter->authors_count > 0 && filter->kinds_count > 0)
+    return NOSTR_DB_QUERY_STRATEGY_BY_PUBKEY_KIND;
+  if (filter->authors_count > 0) return NOSTR_DB_QUERY_STRATEGY_BY_PUBKEY;
+  if (filter->kinds_count > 0) return NOSTR_DB_QUERY_STRATEGY_BY_KIND;
+  return NOSTR_DB_QUERY_STRATEGY_TIMELINE_SCAN;
+}
+
+// ============================================================================
 // query_execute: Select strategy and execute
 // ============================================================================
 NostrDBError query_execute(IndexManager* im, BufferPool* pool,
@@ -387,11 +416,11 @@ NostrDBError query_execute(IndexManager* im, BufferPool* pool,
   require_not_null(filter, NOSTR_DB_ERROR_NULL_PARAM);
   require_not_null(rs, NOSTR_DB_ERROR_NULL_PARAM);
 
-  if (!nostr_db_filter_validate(filter)) {
+  if (!filter_validate(filter)) {
     return NOSTR_DB_ERROR_INVALID_EVENT;
   }
 
-  NostrDBQueryStrategy strategy = nostr_db_query_select_strategy(filter);
+  NostrDBQueryStrategy strategy = select_strategy(filter);
   NostrDBError         err      = NOSTR_DB_OK;
 
   switch (strategy) {
