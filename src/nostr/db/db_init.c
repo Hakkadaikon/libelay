@@ -38,10 +38,12 @@ static bool build_path(char* buffer, size_t capacity, const char* dir,
 // ============================================================================
 // Helper: Initialize metadata page for a new database
 // ============================================================================
-static NostrDBError init_meta_page(NostrDB* db)
+static NostrDBError init_meta_page(NostrDB* db, page_id_t* out_meta_page)
 {
-  PageData* page = buffer_pool_pin(&db->buffer_pool, DB_META_PAGE_ID);
-  if (is_null(page)) {
+  // Allocate a page for metadata (should be page 1, first allocation)
+  PageData* page      = NULL;
+  page_id_t meta_page = buffer_pool_alloc_page(&db->buffer_pool, &page);
+  if (meta_page == PAGE_ID_NULL || is_null(page)) {
     return NOSTR_DB_ERROR_MMAP_FAILED;
   }
 
@@ -50,9 +52,10 @@ static NostrDBError init_meta_page(NostrDB* db)
   internal_memcpy(meta->magic, DB_META_MAGIC, DB_META_MAGIC_SIZE);
   meta->version = DB_FILE_VERSION;
 
-  buffer_pool_mark_dirty(&db->buffer_pool, DB_META_PAGE_ID, 0);
-  buffer_pool_unpin(&db->buffer_pool, DB_META_PAGE_ID);
+  buffer_pool_mark_dirty(&db->buffer_pool, meta_page, 0);
+  buffer_pool_unpin(&db->buffer_pool, meta_page);
 
+  *out_meta_page = meta_page;
   return NOSTR_DB_OK;
 }
 
@@ -174,8 +177,9 @@ NostrDBError nostr_db_init(NostrDB** db, const char* data_dir)
   }
 
   if (is_new) {
-    // Initialize metadata page
-    err = init_meta_page(pdb);
+    // Allocate and initialize metadata page
+    page_id_t meta_page;
+    err = init_meta_page(pdb, &meta_page);
     if (err != NOSTR_DB_OK) {
       nostr_db_shutdown(pdb);
       return err;

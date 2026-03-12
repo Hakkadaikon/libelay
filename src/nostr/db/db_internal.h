@@ -37,7 +37,7 @@ typedef struct {
   page_id_t first_record_page;
   page_id_t last_record_page;
 
-  uint8_t   reserved[DB_PAGE_SIZE - 72];
+  uint8_t   reserved[DB_PAGE_SIZE - 64];
 } DBMetaPage;
 
 _Static_assert(sizeof(DBMetaPage) == DB_PAGE_SIZE, "DBMetaPage must be one page");
