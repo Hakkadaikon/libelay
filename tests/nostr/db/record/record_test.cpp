@@ -181,6 +181,12 @@ NostrDBError record_update(BufferPool* pool, RecordId* rid, const void* data,
                            uint16_t length);
 
 // Overflow API
+NostrDBError overflow_insert(BufferPool* pool, const void* data,
+                             uint16_t total_length, RecordId* out_rid);
+NostrDBError overflow_read(BufferPool* pool, const PageData* page,
+                           uint16_t slot_index, void* out,
+                           uint16_t* out_length);
+NostrDBError overflow_free(BufferPool* pool, page_id_t first_overflow);
 bool overflow_is_spanned(const PageData* page, uint16_t slot_index);
 
 // Event serializer API
@@ -742,4 +748,163 @@ TEST_F(RecordEventIntegrationTest, MultipleEvents)
     expected_id[64] = '\0';
     EXPECT_STREQ(restored.id, expected_id);
   }
+}
+
+// ============================================================================
+// Overflow / Spanned record tests (Phase 9-3: boundary value tests)
+// ============================================================================
+
+class OverflowTest : public ::testing::Test {
+ protected:
+  static constexpr const char* TEST_DB_PATH = "/tmp/overflow_test_db.dat";
+  static constexpr uint32_t    POOL_SIZE    = 64;
+
+  DiskManager disk;
+  BufferPool  pool;
+
+  void SetUp() override
+  {
+    fs::remove(TEST_DB_PATH);
+    memset(&disk, 0, sizeof(disk));
+    memset(&pool, 0, sizeof(pool));
+  }
+
+  void TearDown() override
+  {
+    buffer_pool_shutdown(&pool);
+    disk_manager_close(&disk);
+    fs::remove(TEST_DB_PATH);
+  }
+
+  void init_all()
+  {
+    ASSERT_EQ(disk_manager_create(&disk, TEST_DB_PATH, 512), NOSTR_DB_OK);
+    ASSERT_EQ(buffer_pool_init(&pool, &disk, POOL_SIZE), NOSTR_DB_OK);
+  }
+};
+
+TEST_F(OverflowTest, InsertAndReadSpanned)
+{
+  init_all();
+
+  // Create data larger than one page
+  uint16_t data_len = 5000;
+  uint8_t  data[5000];
+  for (uint16_t i = 0; i < data_len; i++) {
+    data[i] = (uint8_t)(i & 0xFF);
+  }
+
+  RecordId rid;
+  ASSERT_EQ(overflow_insert(&pool, data, data_len, &rid), NOSTR_DB_OK);
+  EXPECT_NE(rid.page_id, PAGE_ID_NULL);
+
+  // Verify it's marked as spanned
+  PageData* page = buffer_pool_pin(&pool, rid.page_id);
+  ASSERT_NE(page, nullptr);
+  EXPECT_TRUE(overflow_is_spanned(page, rid.slot_index));
+
+  // Read back
+  uint8_t  out[5000];
+  uint16_t out_len = sizeof(out);
+  ASSERT_EQ(overflow_read(&pool, page, rid.slot_index, out, &out_len),
+            NOSTR_DB_OK);
+  EXPECT_EQ(out_len, data_len);
+  EXPECT_EQ(memcmp(out, data, data_len), 0);
+
+  buffer_pool_unpin(&pool, rid.page_id);
+}
+
+TEST_F(OverflowTest, ReadQueryLength)
+{
+  init_all();
+
+  uint16_t data_len = 6000;
+  uint8_t  data[6000];
+  memset(data, 0xBB, data_len);
+
+  RecordId rid;
+  ASSERT_EQ(overflow_insert(&pool, data, data_len, &rid), NOSTR_DB_OK);
+
+  // Query length only (pass NULL output buffer)
+  PageData* page = buffer_pool_pin(&pool, rid.page_id);
+  ASSERT_NE(page, nullptr);
+
+  uint16_t length = 0;
+  ASSERT_EQ(overflow_read(&pool, page, rid.slot_index, nullptr, &length),
+            NOSTR_DB_OK);
+  EXPECT_EQ(length, data_len);
+
+  buffer_pool_unpin(&pool, rid.page_id);
+}
+
+TEST_F(OverflowTest, MultiPageOverflowChain)
+{
+  init_all();
+
+  // Create data spanning multiple overflow pages
+  // Each overflow page holds DB_PAGE_SIZE - 8 bytes = 4088 bytes
+  // With inline ~4060 bytes, 12000 total needs ~2 overflow pages
+  uint16_t data_len = 12000;
+  uint8_t  data[12000];
+  for (uint16_t i = 0; i < data_len; i++) {
+    data[i] = (uint8_t)(i % 251);  // Use prime modulus for pattern
+  }
+
+  RecordId rid;
+  ASSERT_EQ(overflow_insert(&pool, data, data_len, &rid), NOSTR_DB_OK);
+
+  PageData* page = buffer_pool_pin(&pool, rid.page_id);
+  ASSERT_NE(page, nullptr);
+  EXPECT_TRUE(overflow_is_spanned(page, rid.slot_index));
+
+  uint8_t  out[12000];
+  uint16_t out_len = sizeof(out);
+  ASSERT_EQ(overflow_read(&pool, page, rid.slot_index, out, &out_len),
+            NOSTR_DB_OK);
+  EXPECT_EQ(out_len, data_len);
+  EXPECT_EQ(memcmp(out, data, data_len), 0);
+
+  buffer_pool_unpin(&pool, rid.page_id);
+}
+
+TEST_F(OverflowTest, FreeOverflowChain)
+{
+  init_all();
+
+  uint16_t data_len = 8000;
+  uint8_t  data[8000];
+  memset(data, 0xCC, data_len);
+
+  RecordId rid;
+  ASSERT_EQ(overflow_insert(&pool, data, data_len, &rid), NOSTR_DB_OK);
+
+  // Get overflow page from spanned prefix
+  PageData* page = buffer_pool_pin(&pool, rid.page_id);
+  ASSERT_NE(page, nullptr);
+
+  SlotEntry* slot = (SlotEntry*)(page->data + SLOT_PAGE_HEADER_SIZE +
+                                 rid.slot_index * SLOT_ENTRY_SIZE);
+  SpannedPrefix* prefix = (SpannedPrefix*)(page->data + slot->offset);
+  page_id_t overflow_page = prefix->overflow_page;
+  EXPECT_NE(overflow_page, PAGE_ID_NULL);
+
+  buffer_pool_unpin(&pool, rid.page_id);
+
+  // Free the overflow chain
+  EXPECT_EQ(overflow_free(&pool, overflow_page), NOSTR_DB_OK);
+}
+
+TEST_F(OverflowTest, NullParams)
+{
+  init_all();
+
+  RecordId rid;
+  uint8_t  data[100];
+
+  EXPECT_EQ(overflow_insert(nullptr, data, 100, &rid),
+            NOSTR_DB_ERROR_NULL_PARAM);
+  EXPECT_EQ(overflow_insert(&pool, nullptr, 100, &rid),
+            NOSTR_DB_ERROR_NULL_PARAM);
+  EXPECT_EQ(overflow_insert(&pool, data, 100, nullptr),
+            NOSTR_DB_ERROR_NULL_PARAM);
 }
