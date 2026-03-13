@@ -567,3 +567,137 @@ TEST_F(BufferPoolTest, AllocModifyEvictReload) {
     buffer_pool_unpin(&pool, pids[i]);
   }
 }
+
+// ============================================================================
+// Phase 9-3: Clock replacement boundary tests
+// ============================================================================
+
+TEST_F(BufferPoolTest, ClockSecondChance) {
+  // Pool of 4 frames. Access pattern that tests second chance.
+  ASSERT_EQ(buffer_pool_init(&pool, &dm, 4), NOSTR_DB_OK);
+
+  // Allocate 4 pages to fill the pool
+  page_id_t pids[4];
+  for (int i = 0; i < 4; i++) {
+    PageData* p = nullptr;
+    pids[i]     = buffer_pool_alloc_page(&pool, &p);
+    ASSERT_NE(pids[i], PAGE_ID_NULL);
+    p->data[0] = (uint8_t)(i + 1);
+    buffer_pool_unpin(&pool, pids[i]);
+  }
+
+  // Re-access pages 0 and 1 to set their ref bits
+  for (int i = 0; i < 2; i++) {
+    PageData* p = buffer_pool_pin(&pool, pids[i]);
+    ASSERT_NE(p, nullptr);
+    buffer_pool_unpin(&pool, pids[i]);
+  }
+
+  // Allocate a new page — should evict a page without ref bit (2 or 3)
+  PageData* new_p = nullptr;
+  page_id_t new_pid = buffer_pool_alloc_page(&pool, &new_p);
+  ASSERT_NE(new_pid, PAGE_ID_NULL);
+  ASSERT_NE(new_p, nullptr);
+  buffer_pool_unpin(&pool, new_pid);
+
+  // Pages 0 and 1 should still be accessible (were given second chance)
+  for (int i = 0; i < 2; i++) {
+    PageData* p = buffer_pool_pin(&pool, pids[i]);
+    ASSERT_NE(p, nullptr) << "Page " << i << " should survive eviction";
+    EXPECT_EQ(p->data[0], (uint8_t)(i + 1));
+    buffer_pool_unpin(&pool, pids[i]);
+  }
+}
+
+TEST_F(BufferPoolTest, HotColdAccessPattern) {
+  // Pool of 4. Keep 2 "hot" pages accessed frequently, cycle "cold" pages
+  ASSERT_EQ(buffer_pool_init(&pool, &dm, 4), NOSTR_DB_OK);
+
+  // Create 10 pages on disk
+  const int N = 10;
+  page_id_t pids[N];
+  for (int i = 0; i < N; i++) {
+    pids[i] = disk_alloc_page(&dm);
+    ASSERT_NE(pids[i], PAGE_ID_NULL);
+    PageData dp;
+    memset(&dp, 0, DB_PAGE_SIZE);
+    dp.data[0] = (uint8_t)(i);
+    ASSERT_EQ(disk_write_page(&dm, pids[i], &dp), NOSTR_DB_OK);
+  }
+
+  // Cycle: access hot pages (0,1) + one cold page each iteration
+  for (int round = 0; round < 5; round++) {
+    // Access hot pages
+    for (int h = 0; h < 2; h++) {
+      PageData* p = buffer_pool_pin(&pool, pids[h]);
+      ASSERT_NE(p, nullptr);
+      EXPECT_EQ(p->data[0], (uint8_t)(h));
+      buffer_pool_unpin(&pool, pids[h]);
+    }
+    // Access a cold page
+    int       cold_idx = 2 + round;
+    PageData* p        = buffer_pool_pin(&pool, pids[cold_idx]);
+    ASSERT_NE(p, nullptr);
+    EXPECT_EQ(p->data[0], (uint8_t)(cold_idx));
+    buffer_pool_unpin(&pool, pids[cold_idx]);
+  }
+
+  // Hot pages should still be in pool (frequently accessed)
+  for (int h = 0; h < 2; h++) {
+    PageData* p = buffer_pool_pin(&pool, pids[h]);
+    ASSERT_NE(p, nullptr);
+    EXPECT_EQ(p->data[0], (uint8_t)(h));
+    buffer_pool_unpin(&pool, pids[h]);
+  }
+}
+
+TEST_F(BufferPoolTest, AllPinnedEvictionFails) {
+  // Pool of 2. Pin both frames. Attempting to pin a third should still work
+  // because the implementation may flush + evict, or return NULL.
+  ASSERT_EQ(buffer_pool_init(&pool, &dm, 2), NOSTR_DB_OK);
+
+  page_id_t p1 = disk_alloc_page(&dm);
+  page_id_t p2 = disk_alloc_page(&dm);
+  page_id_t p3 = disk_alloc_page(&dm);
+  ASSERT_NE(p1, PAGE_ID_NULL);
+  ASSERT_NE(p2, PAGE_ID_NULL);
+  ASSERT_NE(p3, PAGE_ID_NULL);
+
+  // Pin both frames (don't unpin)
+  PageData* pp1 = buffer_pool_pin(&pool, p1);
+  PageData* pp2 = buffer_pool_pin(&pool, p2);
+  ASSERT_NE(pp1, nullptr);
+  ASSERT_NE(pp2, nullptr);
+
+  // Try to pin a third page — should fail (all frames pinned)
+  PageData* pp3 = buffer_pool_pin(&pool, p3);
+  EXPECT_EQ(pp3, nullptr);
+
+  buffer_pool_unpin(&pool, p1);
+  buffer_pool_unpin(&pool, p2);
+}
+
+TEST_F(BufferPoolTest, SaturatedPoolDirtyEviction) {
+  // Pool of 3, write dirty data to 6 pages, verify all persisted
+  ASSERT_EQ(buffer_pool_init(&pool, &dm, 3), NOSTR_DB_OK);
+
+  const int N = 6;
+  page_id_t pids[N];
+  for (int i = 0; i < N; i++) {
+    PageData* p = nullptr;
+    pids[i]     = buffer_pool_alloc_page(&pool, &p);
+    ASSERT_NE(pids[i], PAGE_ID_NULL);
+    memset(p->data, (uint8_t)(i + 0x10), DB_PAGE_SIZE);
+    buffer_pool_unpin(&pool, pids[i]);
+  }
+
+  // Flush and verify from disk
+  buffer_pool_flush_all(&pool);
+
+  for (int i = 0; i < N; i++) {
+    PageData verify;
+    ASSERT_EQ(disk_read_page(&dm, pids[i], &verify), NOSTR_DB_OK);
+    EXPECT_EQ(verify.data[100], (uint8_t)(i + 0x10))
+        << "Dirty data not persisted for page " << i;
+  }
+}
