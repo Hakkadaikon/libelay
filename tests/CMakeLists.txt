@@ -35,6 +35,7 @@ add_executable(
   nostr/db/db_init_test.cpp
   nostr/db/db_event_test.cpp
   nostr/db/db_query_test.cpp
+  nostr/db/db_bench_test.cpp
   ../src/nostr/db/db_tags.c
   ../src/nostr/db/db_file.c
   ../src/nostr/db/db_mmap.c
