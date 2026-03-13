@@ -985,26 +985,26 @@ typedef struct {
 
 ### TODO Phase 8
 
-- [ ] **8-1**: `db_internal.h` — 新 `NostrDB` 構造体定義 (既存の `struct NostrDB` を置き換え)
-- [ ] **8-2**: `db_init.c` — 初期化フロー再実装
+- [x] **8-1**: `db_internal.h` — 新 `NostrDB` 構造体定義 (既存の `struct NostrDB` を置き換え)
+- [x] **8-2**: `db_init.c` — 初期化フロー再実装
     - 単一ファイル `nostr.db` のオープン/作成
     - DiskManager → BufferPool → WalManager → IndexManager の順に初期化
     - WALリカバリ実行
-- [ ] **8-3**: `db_event.c` — `nostr_db_write_event` 再実装
+- [x] **8-3**: `db_event.c` — `nostr_db_write_event` 再実装
     - EventRecordシリアライズ → RecordManager挿入 → IndexManager全インデックス更新
     - WALトランザクションでラップ
-- [ ] **8-4**: `db_event.c` — `nostr_db_get_event_by_id` 再実装
+- [x] **8-4**: `db_event.c` — `nostr_db_get_event_by_id` 再実装
     - IDインデックス → RecordId → RecordManager読み出し → NostrEventEntityデシリアライズ
-- [ ] **8-5**: `db_event.c` — `nostr_db_get_event_at_offset` 再実装
+- [x] **8-5**: `db_event.c` — `nostr_db_get_event_at_offset` 再実装
     - RecordId (page_id + slot_index) から直接読み出し (offsetの意味がRecordIdに変更)
-- [ ] **8-6**: `db_event.c` — `nostr_db_delete_event` 再実装
+- [x] **8-6**: `db_event.c` — `nostr_db_delete_event` 再実装
     - IDインデックスでRecordId取得 → レコードの削除フラグ設定 → 各インデックスから削除
-- [ ] **8-7**: `db_init.c` — `nostr_db_shutdown` 再実装
+- [x] **8-7**: `db_init.c` — `nostr_db_shutdown` 再実装
     - チェックポイント実行 → バッファプールフラッシュ → 全リソース解放
-- [ ] **8-8**: `db_init.c` — `nostr_db_get_stats` 再実装
+- [x] **8-8**: `db_init.c` — `nostr_db_get_stats` 再実装
     - 各B+ツリーのentry_countを集計
 - [ ] **8-9**: マイグレーション: 旧形式 (7ファイル) → 新形式 (単一ファイル) のデータ移行ユーティリティ (任意)
-- [ ] **8-10**: `tests/db-test.cpp` — 既存テストの更新 + 統合テスト
+- [x] **8-10**: `tests/db-test.cpp` — 既存テストの更新 + 統合テスト
     - 書き込み → 読み出し → 削除 → クエリの一連フロー
     - 大量データ (10万件) の挿入・検索性能テスト
 
@@ -1014,14 +1014,14 @@ typedef struct {
 
 ### TODO Phase 9
 
-- [ ] **9-1**: `tests/CMakeLists.txt` — 新テスト追加 (disk-test, buffer-test, wal-test, btree-test, record-test, index-test, query-test)
-- [ ] **9-2**: クラッシュリカバリテスト
+- [x] **9-1**: `tests/CMakeLists.txt` — 新テスト追加 (disk-test, buffer-test, wal-test, btree-test, record-test, index-test, query-test)
+- [x] **9-2**: クラッシュリカバリテスト
     - 書き込み途中でプロセスkill → 再起動 → データ整合性確認
-- [ ] **9-3**: 境界値テスト
+- [x] **9-3**: 境界値テスト
     - ページ境界をまたぐレコード (スパンドレコード)
     - B+ツリー分割が連鎖するケース (大量挿入)
     - バッファプール満杯時のClock置換
-- [ ] **9-4**: ベンチマーク
+- [x] **9-4**: ベンチマーク
     - 挿入スループット: 10万イベント/秒目標
     - 検索レイテンシ: ID検索 < 10μs (3ページアクセス)
     - 範囲スキャン: 1000件/ms目標
