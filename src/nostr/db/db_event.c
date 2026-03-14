@@ -20,6 +20,27 @@ NostrDBError nostr_db_write_event(NostrDB* db, const NostrEventEntity* event)
     return NOSTR_DB_ERROR_INVALID_EVENT;
   }
 
+  EventRecord* rec = (EventRecord*)buf;
+
+  // Check if event ID already exists (duplicate or previously deleted)
+  RecordId     existing_rid;
+  NostrDBError lookup_err =
+    index_id_lookup(&db->indexes.id_index, rec->id, &existing_rid);
+  if (lookup_err == NOSTR_DB_OK) {
+    // ID exists in index - read record to check deleted flag
+    uint8_t      existing_buf[4096];
+    uint16_t     existing_len = sizeof(existing_buf);
+    NostrDBError read_err =
+      record_read(&db->buffer_pool, existing_rid, existing_buf, &existing_len);
+    if (read_err == NOSTR_DB_OK) {
+      EventRecord* existing_rec = (EventRecord*)existing_buf;
+      if (existing_rec->flags & NOSTR_DB_EVENT_FLAG_DELETED) {
+        return NOSTR_DB_ERROR_DELETED;
+      }
+    }
+    return NOSTR_DB_ERROR_DUPLICATE;
+  }
+
   // Insert record into storage
   RecordId     rid;
   NostrDBError err = record_insert(&db->buffer_pool, buf, (uint16_t)size, &rid);
@@ -27,8 +48,7 @@ NostrDBError nostr_db_write_event(NostrDB* db, const NostrEventEntity* event)
     return err;
   }
 
-  // Get EventRecord header and tag data for index insertion
-  EventRecord*   rec         = (EventRecord*)buf;
+  // Get tag data for index insertion
   const uint8_t* tags_data   = buf + sizeof(EventRecord) + rec->content_length;
   uint16_t       tags_length = rec->tags_length;
 
@@ -146,10 +166,14 @@ NostrDBError nostr_db_delete_event(NostrDB* db, const uint8_t* id)
     return NOSTR_DB_ERROR_NOT_FOUND;
   }
 
-  // Remove from all indexes
+  // Remove from all indexes (including ID index)
   const uint8_t* tags_data   = buf + sizeof(EventRecord) + rec->content_length;
   uint16_t       tags_length = rec->tags_length;
   index_manager_delete_event(&db->indexes, rid, rec, tags_data, tags_length);
+
+  // Re-insert into ID index to keep for deletion detection
+  // (resubmission of deleted events should be rejected)
+  index_id_insert(&db->indexes.id_index, rec->id, rid);
 
   // Mark record as deleted by setting flag
   rec->flags |= NOSTR_DB_EVENT_FLAG_DELETED;

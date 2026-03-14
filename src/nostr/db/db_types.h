@@ -52,6 +52,7 @@ typedef enum {
   NOSTR_DB_ERROR_NULL_PARAM       = -11,
   NOSTR_DB_ERROR_FSTAT_FAILED     = -12,
   NOSTR_DB_ERROR_FTRUNCATE_FAILED = -13,
+  NOSTR_DB_ERROR_DELETED          = -14,
 } NostrDBError;
 
 // ============================================================================
