@@ -76,13 +76,17 @@ static NostrDBError process_tags(BTree* tree, const uint8_t* tags_data,
 
       if (ptr + value_len > end) return NOSTR_DB_OK;
 
-      // Index only the first value of single-char tags if it's a 64-char hex
+      // Index the first value of single-char tags
       if (indexable && j == 0) {
         uint8_t raw_value[32];
-        if (hex_to_32bytes(ptr, value_len, raw_value)) {
-          NostrDBError err = op(tree, tag_name, raw_value, rid);
-          if (err != NOSTR_DB_OK) return err;
+        internal_memset(raw_value, 0, 32);
+        if (!hex_to_32bytes(ptr, value_len, raw_value)) {
+          // Non-hex value: zero-pad the raw string into 32 bytes
+          size_t copy_len = value_len > 32 ? 32 : value_len;
+          internal_memcpy(raw_value, ptr, copy_len);
         }
+        NostrDBError err = op(tree, tag_name, raw_value, rid);
+        if (err != NOSTR_DB_OK) return err;
       }
 
       ptr += value_len;
