@@ -19,32 +19,39 @@ static inline int32_t receive_handle(
   require_not_null(buffer->response, WEBSOCKET_ERRORCODE_FATAL_ERROR);
 
   WebSocketEntity entity;
-  websocket_memset(&entity, 0x00, sizeof(entity));
+  char*           payload_buf = (char*)websocket_alloc(read_size);
+  int32_t         rtn         = 0;
+  size_t          offset      = 0;
 
-  entity.payload = (char*)websocket_alloc(read_size);
+  while (offset < read_size) {
+    websocket_memset(&entity, 0x00, sizeof(entity));
+    entity.payload = payload_buf;
 
-  int32_t rtn = 0;
+    size_t consumed = to_websocket_entity_consumed(
+      buffer->request + offset, read_size - offset, &entity);
 
-  if (!to_websocket_entity(buffer->request, read_size, &entity)) {
-    rtn = WEBSOCKET_ERRORCODE_CONTINUABLE_ERROR;
-    goto FINALIZE;
-  }
+    if (consumed == 0) {
+      break;
+    }
 
-  websocket_packet_dump(&entity);
+    websocket_packet_dump(&entity);
 
-  rtn = opcode_handle(client_sock, buffer, callbacks, &entity);
-  if (rtn != WEBSOCKET_ERRORCODE_NONE) {
-    goto FINALIZE;
-  }
+    rtn = opcode_handle(client_sock, buffer, callbacks, &entity);
+    if (rtn != WEBSOCKET_ERRORCODE_NONE) {
+      goto FINALIZE;
+    }
 
-  if (is_rise_signal()) {
-    var_info("rise signal. sock : ", client_sock);
-    rtn = WEBSOCKET_ERRORCODE_FATAL_ERROR;
-    goto FINALIZE;
+    if (is_rise_signal()) {
+      var_info("rise signal. sock : ", client_sock);
+      rtn = WEBSOCKET_ERRORCODE_FATAL_ERROR;
+      goto FINALIZE;
+    }
+
+    offset += consumed;
   }
 
 FINALIZE:
-  websocket_free(entity.payload);
+  websocket_free(payload_buf);
   return rtn;
 }
 

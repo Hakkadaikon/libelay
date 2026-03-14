@@ -132,7 +132,8 @@ typedef struct {
  *
  * @return true: Parse was successful / false: Failed parse
  */
-bool to_websocket_entity(const char* raw, const size_t packet_size, WebSocketEntity* entity);
+bool   to_websocket_entity(const char* raw, const size_t packet_size, WebSocketEntity* entity);
+size_t to_websocket_entity_consumed(const char* raw, const size_t capacity, WebSocketEntity* entity);
 
 /**
  * @brief Creates raw data to send back to the client
