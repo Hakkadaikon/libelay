@@ -1,4 +1,5 @@
 #include "../../arch/memory.h"
+#include "../../arch/mkdir.h"
 #include "../../util/string.h"
 #include "db.h"
 #include "db_file.h"
@@ -142,6 +143,9 @@ NostrDBError nostr_db_init(NostrDB** db, const char* data_dir)
   if (!build_path(wal_path, sizeof(wal_path), data_dir, WAL_FILE)) {
     return NOSTR_DB_ERROR_NULL_PARAM;
   }
+
+  // Ensure data directory exists (ignore EEXIST)
+  internal_mkdir(data_dir, S_IRWXU);
 
   // Open or create database file
   bool         is_new = !nostr_db_file_exists(db_path);
