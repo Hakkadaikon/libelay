@@ -61,6 +61,87 @@ static bool send_websocket_message(int32_t client_sock, const char* message, siz
 }
 
 // ============================================================================
+// Helper: Send OK response
+// ============================================================================
+static void send_ok_response(int32_t client_sock, const char* event_id, bool ok, const char* message)
+{
+  if (nostr_response_ok(event_id, ok, message, g_response_buffer, RESPONSE_BUFFER_SIZE)) {
+    size_t len = strlen(g_response_buffer);
+    send_websocket_message(client_sock, g_response_buffer, len);
+  }
+}
+
+// ============================================================================
+// Helper: Convert hex character to value
+// ============================================================================
+static int32_t hex_char_val(char c)
+{
+  if (c >= '0' && c <= '9') return c - '0';
+  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+  return -1;
+}
+
+// ============================================================================
+// Helper: Convert hex string to binary
+// ============================================================================
+static bool hex_str_to_bin(const char* hex, uint8_t* out, size_t out_len)
+{
+  for (size_t i = 0; i < out_len; i++) {
+    int32_t h = hex_char_val(hex[i * 2]);
+    int32_t l = hex_char_val(hex[i * 2 + 1]);
+    if (h < 0 || l < 0) return false;
+    out[i] = (uint8_t)((h << 4) | l);
+  }
+  return true;
+}
+
+// ============================================================================
+// Helper: Check if event kind is replaceable (NIP-01)
+// ============================================================================
+static bool is_replaceable_kind(uint32_t kind)
+{
+  return kind == 0 || kind == 3 || (kind >= 10000 && kind <= 19999);
+}
+
+// ============================================================================
+// Helper: Check if event kind is addressable/parameterized replaceable (NIP-01)
+// ============================================================================
+static bool is_addressable_kind(uint32_t kind)
+{
+  return kind >= 30000 && kind <= 39999;
+}
+
+// ============================================================================
+// Helper: Get d-tag value from event (returns "" if not found)
+// ============================================================================
+static const char* get_d_tag_value(const NostrEventEntity* event)
+{
+  for (uint32_t i = 0; i < event->tag_count; i++) {
+    if (event->tags[i].key[0] == 'd' && event->tags[i].key[1] == '\0') {
+      if (event->tags[i].item_count >= 1) {
+        return event->tags[i].values[0];
+      }
+      return "";
+    }
+  }
+  return "";
+}
+
+// ============================================================================
+// Helper: Case-sensitive string equality check
+// ============================================================================
+static bool str_equal(const char* a, const char* b)
+{
+  while (*a && *b) {
+    if (*a != *b) return false;
+    a++;
+    b++;
+  }
+  return *a == *b;
+}
+
+// ============================================================================
 // Helper: Convert NostrFilter to NostrDBFilter
 // ============================================================================
 static void convert_filter_to_db_filter(const NostrFilter* src, NostrDBFilter* dst)
@@ -135,58 +216,377 @@ static void broadcast_to_subscription(const NostrSubscription* subscription, voi
 }
 
 // ============================================================================
-// Handle EVENT message
+// Helper: Store event and broadcast to matching subscriptions
 // ============================================================================
-static bool handle_event_message(int32_t client_sock, const NostrEventEntity* event)
+static bool store_and_broadcast(int32_t client_sock, const NostrEventEntity* event)
 {
-  if (!g_db_initialized || g_db == NULL) {
-    // Send error OK response
-    if (nostr_response_ok(event->id, false, "error: database not initialized", g_response_buffer, RESPONSE_BUFFER_SIZE)) {
-      size_t len = strlen(g_response_buffer);
-      send_websocket_message(client_sock, g_response_buffer, len);
-    }
-    return false;
-  }
-
-  // Save event to database
   NostrDBError err = nostr_db_write_event(g_db, event);
 
   if (err == NOSTR_DB_OK) {
-    // Send OK success response
-    if (nostr_response_ok(event->id, true, "", g_response_buffer, RESPONSE_BUFFER_SIZE)) {
-      size_t len = strlen(g_response_buffer);
-      send_websocket_message(client_sock, g_response_buffer, len);
-    }
+    send_ok_response(client_sock, event->id, true, "");
 
-    // Broadcast to matching subscriptions
     BroadcastContext ctx;
     ctx.event         = event;
     ctx.source_client = client_sock;
     nostr_subscription_find_matching(&g_subscription_manager, event, broadcast_to_subscription, &ctx);
-
     return true;
   } else if (err == NOSTR_DB_ERROR_DUPLICATE) {
-    // Duplicate event - still OK per NIP-01
-    if (nostr_response_ok(event->id, true, "duplicate:", g_response_buffer, RESPONSE_BUFFER_SIZE)) {
-      size_t len = strlen(g_response_buffer);
-      send_websocket_message(client_sock, g_response_buffer, len);
-    }
+    send_ok_response(client_sock, event->id, true, "duplicate:");
+    return true;
+  } else if (err == NOSTR_DB_ERROR_DELETED) {
+    send_ok_response(client_sock, event->id, false, "deleted: event was previously deleted");
     return true;
   } else {
-    // Error saving event
     const char* msg = "error: failed to save event";
     if (err == NOSTR_DB_ERROR_FULL) {
       msg = "error: database full";
     } else if (err == NOSTR_DB_ERROR_INVALID_EVENT) {
       msg = "error: invalid event";
     }
-
-    if (nostr_response_ok(event->id, false, msg, g_response_buffer, RESPONSE_BUFFER_SIZE)) {
-      size_t len = strlen(g_response_buffer);
-      send_websocket_message(client_sock, g_response_buffer, len);
-    }
+    send_ok_response(client_sock, event->id, false, msg);
     return false;
   }
+}
+
+// ============================================================================
+// Handle replaceable events: check for existing and delete old ones
+// Returns true if the new event should be stored, false if rejected
+// ============================================================================
+static bool handle_replaceable_check(int32_t client_sock, const NostrEventEntity* event)
+{
+  uint8_t pubkey_bin[32];
+  if (!hex_str_to_bin(event->pubkey, pubkey_bin, 32)) return true;
+
+  NostrDBFilter db_filter;
+  nostr_db_filter_init(&db_filter);
+  db_filter.authors_count         = 1;
+  db_filter.authors[0].prefix_len = 32;
+  internal_memcpy(db_filter.authors[0].value, pubkey_bin, 32);
+  db_filter.kinds_count = 1;
+  db_filter.kinds[0]    = event->kind;
+  db_filter.limit       = 100;
+
+  NostrDBResultSet* result = nostr_db_result_create(0);
+  if (is_null(result)) return true;
+
+  NostrDBError err = nostr_db_query_execute(g_db, &db_filter, result);
+  if (err != NOSTR_DB_OK || result->count == 0) {
+    nostr_db_result_free(result);
+    return true;
+  }
+
+  NostrEventEntity* existing = (NostrEventEntity*)internal_mmap(
+    NULL, sizeof(NostrEventEntity), PROT_READ | PROT_WRITE,
+    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (existing == MAP_FAILED) {
+    nostr_db_result_free(result);
+    return true;
+  }
+
+  bool should_store = true;
+
+  // First pass: check if any existing event is newer
+  for (uint32_t i = 0; i < result->count; i++) {
+    if (nostr_db_get_event_at_offset(g_db, result->offsets[i], existing) != NOSTR_DB_OK) {
+      continue;
+    }
+
+    if (existing->created_at > event->created_at) {
+      should_store = false;
+      break;
+    }
+    if (existing->created_at == event->created_at) {
+      // Same timestamp: keep the one with the lexicographically lower ID
+      size_t id_len = strlen(event->id);
+      if (strncmp_sensitive(existing->id, event->id, id_len, id_len, true) &&
+          id_len == strlen(existing->id)) {
+        // IDs are equal - same event, treat as duplicate (will be caught by write)
+      } else {
+        // Compare character by character
+        bool existing_lower = false;
+        for (size_t c = 0; c < 64; c++) {
+          if (existing->id[c] < event->id[c]) {
+            existing_lower = true;
+            break;
+          } else if (existing->id[c] > event->id[c]) {
+            break;
+          }
+        }
+        if (existing_lower) {
+          should_store = false;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!should_store) {
+    send_ok_response(client_sock, event->id, false, "duplicate: have a newer event");
+    internal_munmap(existing, sizeof(NostrEventEntity));
+    nostr_db_result_free(result);
+    return false;
+  }
+
+  // Second pass: delete all old events
+  for (uint32_t i = 0; i < result->count; i++) {
+    if (nostr_db_get_event_at_offset(g_db, result->offsets[i], existing) == NOSTR_DB_OK) {
+      uint8_t old_id_bin[32];
+      if (hex_str_to_bin(existing->id, old_id_bin, 32)) {
+        nostr_db_delete_event(g_db, old_id_bin);
+      }
+    }
+  }
+
+  internal_munmap(existing, sizeof(NostrEventEntity));
+  nostr_db_result_free(result);
+  return true;
+}
+
+// ============================================================================
+// Handle addressable events: check for existing with same d-tag
+// Returns true if the new event should be stored, false if rejected
+// ============================================================================
+static bool handle_addressable_check(int32_t client_sock, const NostrEventEntity* event)
+{
+  uint8_t pubkey_bin[32];
+  if (!hex_str_to_bin(event->pubkey, pubkey_bin, 32)) return true;
+
+  const char* d_value = get_d_tag_value(event);
+
+  NostrDBFilter db_filter;
+  nostr_db_filter_init(&db_filter);
+  db_filter.authors_count         = 1;
+  db_filter.authors[0].prefix_len = 32;
+  internal_memcpy(db_filter.authors[0].value, pubkey_bin, 32);
+  db_filter.kinds_count = 1;
+  db_filter.kinds[0]    = event->kind;
+  db_filter.limit       = 100;
+
+  NostrDBResultSet* result = nostr_db_result_create(0);
+  if (is_null(result)) return true;
+
+  NostrDBError err = nostr_db_query_execute(g_db, &db_filter, result);
+  if (err != NOSTR_DB_OK || result->count == 0) {
+    nostr_db_result_free(result);
+    return true;
+  }
+
+  NostrEventEntity* existing = (NostrEventEntity*)internal_mmap(
+    NULL, sizeof(NostrEventEntity), PROT_READ | PROT_WRITE,
+    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (existing == MAP_FAILED) {
+    nostr_db_result_free(result);
+    return true;
+  }
+
+  bool should_store = true;
+
+  for (uint32_t i = 0; i < result->count; i++) {
+    if (nostr_db_get_event_at_offset(g_db, result->offsets[i], existing) != NOSTR_DB_OK) {
+      continue;
+    }
+
+    // Check d-tag match
+    const char* existing_d = get_d_tag_value(existing);
+    if (!str_equal(existing_d, d_value)) {
+      continue;
+    }
+
+    if (existing->created_at > event->created_at) {
+      should_store = false;
+      break;
+    }
+    if (existing->created_at == event->created_at) {
+      bool existing_lower = false;
+      for (size_t c = 0; c < 64; c++) {
+        if (existing->id[c] < event->id[c]) {
+          existing_lower = true;
+          break;
+        } else if (existing->id[c] > event->id[c]) {
+          break;
+        }
+      }
+      if (existing_lower) {
+        should_store = false;
+        break;
+      }
+    }
+
+    // Delete old addressable event
+    uint8_t old_id_bin[32];
+    if (hex_str_to_bin(existing->id, old_id_bin, 32)) {
+      nostr_db_delete_event(g_db, old_id_bin);
+    }
+  }
+
+  if (!should_store) {
+    send_ok_response(client_sock, event->id, false, "duplicate: have a newer event");
+  }
+
+  internal_munmap(existing, sizeof(NostrEventEntity));
+  nostr_db_result_free(result);
+  return should_store;
+}
+
+// ============================================================================
+// Process deletion event (kind 5): delete referenced events
+// Returns true if at least one valid deletion was performed or all refs are own
+// ============================================================================
+static bool process_deletion_event(int32_t client_sock, const NostrEventEntity* deletion_event)
+{
+  uint8_t deletion_pubkey_bin[32];
+  if (!hex_str_to_bin(deletion_event->pubkey, deletion_pubkey_bin, 32)) return false;
+
+  NostrEventEntity* target = (NostrEventEntity*)internal_mmap(
+    NULL, sizeof(NostrEventEntity), PROT_READ | PROT_WRITE,
+    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (target == MAP_FAILED) return false;
+
+  bool has_invalid_ref = false;
+
+  for (uint32_t i = 0; i < deletion_event->tag_count; i++) {
+    const NostrTagEntity* tag = &deletion_event->tags[i];
+
+    // Process e-tags (delete by event ID)
+    if (tag->key[0] == 'e' && tag->key[1] == '\0' && tag->item_count >= 1) {
+      size_t id_len = strlen(tag->values[0]);
+      if (id_len != 64) continue;
+
+      uint8_t target_id_bin[32];
+      if (!hex_str_to_bin(tag->values[0], target_id_bin, 32)) continue;
+
+      if (nostr_db_get_event_by_id(g_db, target_id_bin, target) == NOSTR_DB_OK) {
+        uint8_t target_pubkey_bin[32];
+        if (hex_str_to_bin(target->pubkey, target_pubkey_bin, 32) &&
+            internal_memcmp(deletion_pubkey_bin, target_pubkey_bin, 32) == 0) {
+          nostr_db_delete_event(g_db, target_id_bin);
+        } else {
+          has_invalid_ref = true;
+        }
+      }
+      // If event not found, just skip (not an error)
+    }
+
+    // Process a-tags (delete by kind:pubkey:d-tag)
+    if (tag->key[0] == 'a' && tag->key[1] == '\0' && tag->item_count >= 1) {
+      const char* a_val = tag->values[0];
+
+      // Parse kind
+      uint32_t a_kind = 0;
+      size_t   pos    = 0;
+      while (a_val[pos] && a_val[pos] != ':') {
+        if (a_val[pos] < '0' || a_val[pos] > '9') break;
+        a_kind = a_kind * 10 + (uint32_t)(a_val[pos] - '0');
+        pos++;
+      }
+      if (a_val[pos] != ':') continue;
+      pos++;
+
+      // Parse pubkey (64 hex chars)
+      const char* a_pubkey_start = &a_val[pos];
+      size_t      a_pubkey_len   = 0;
+      while (a_val[pos] && a_val[pos] != ':') {
+        a_pubkey_len++;
+        pos++;
+      }
+      if (a_pubkey_len != 64) continue;
+
+      uint8_t a_pubkey_bin[32];
+      if (!hex_str_to_bin(a_pubkey_start, a_pubkey_bin, 32)) continue;
+
+      // Check that the a-tag pubkey matches the deletion event's pubkey
+      if (internal_memcmp(deletion_pubkey_bin, a_pubkey_bin, 32) != 0) {
+        has_invalid_ref = true;
+        continue;
+      }
+
+      // Parse d-tag value
+      const char* a_d_value = "";
+      if (a_val[pos] == ':') {
+        pos++;
+        a_d_value = &a_val[pos];
+      }
+
+      // Query for matching events
+      NostrDBFilter db_filter;
+      nostr_db_filter_init(&db_filter);
+      db_filter.authors_count         = 1;
+      db_filter.authors[0].prefix_len = 32;
+      internal_memcpy(db_filter.authors[0].value, a_pubkey_bin, 32);
+      db_filter.kinds_count = 1;
+      db_filter.kinds[0]    = a_kind;
+      db_filter.limit       = 100;
+
+      NostrDBResultSet* result = nostr_db_result_create(0);
+      if (is_null(result)) continue;
+
+      if (nostr_db_query_execute(g_db, &db_filter, result) == NOSTR_DB_OK) {
+        for (uint32_t j = 0; j < result->count; j++) {
+          if (nostr_db_get_event_at_offset(g_db, result->offsets[j], target) == NOSTR_DB_OK) {
+            const char* target_d = get_d_tag_value(target);
+            if (str_equal(target_d, a_d_value)) {
+              // Only delete if target is older than or same age as deletion event
+              if (target->created_at <= deletion_event->created_at) {
+                uint8_t target_id_bin[32];
+                if (hex_str_to_bin(target->id, target_id_bin, 32)) {
+                  nostr_db_delete_event(g_db, target_id_bin);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      nostr_db_result_free(result);
+    }
+  }
+
+  internal_munmap(target, sizeof(NostrEventEntity));
+
+  if (has_invalid_ref) {
+    send_ok_response(client_sock, deletion_event->id, false,
+                     "blocked: cannot delete other's events");
+    return false;
+  }
+
+  return true;
+}
+
+// ============================================================================
+// Handle EVENT message
+// ============================================================================
+static bool handle_event_message(int32_t client_sock, const NostrEventEntity* event)
+{
+  if (!g_db_initialized || g_db == NULL) {
+    send_ok_response(client_sock, event->id, false, "error: database not initialized");
+    return false;
+  }
+
+  // Handle deletion events (kind 5)
+  if (event->kind == 5) {
+    if (!process_deletion_event(client_sock, event)) {
+      return true;  // Rejected (tried to delete other's events)
+    }
+    // Store the deletion event itself
+    return store_and_broadcast(client_sock, event);
+  }
+
+  // Handle replaceable events (kinds 0, 3, 10000-19999)
+  if (is_replaceable_kind(event->kind)) {
+    if (!handle_replaceable_check(client_sock, event)) {
+      return true;  // Rejected - older than existing
+    }
+  }
+
+  // Handle addressable events (kinds 30000-39999)
+  if (is_addressable_kind(event->kind)) {
+    if (!handle_addressable_check(client_sock, event)) {
+      return true;  // Rejected - older than existing
+    }
+  }
+
+  // Store and broadcast
+  return store_and_broadcast(client_sock, event);
 }
 
 // ============================================================================
